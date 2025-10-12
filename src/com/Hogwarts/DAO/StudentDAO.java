@@ -18,7 +18,9 @@ public class StudentDAO {
                     rs.getInt("age"),
                     rs.getInt("class_no"),
                     rs.getString("address"),
-                    rs.getString("marks"),
+                    rs.getString("first_internal"),
+                    rs.getString("second_internal"),
+                    rs.getString("term_exam"),
                     rs.getString("father_name"),
                     rs.getString("father_number"),
                     rs.getString("dob")
@@ -42,7 +44,9 @@ public class StudentDAO {
                         rs.getInt("age"),
                         rs.getInt("class_no"),
                         rs.getString("address"),
-                        rs.getString("marks"),
+                        rs.getString("first_internal"),
+                        rs.getString("second_internal"),
+                        rs.getString("term_exam"),
                         rs.getString("father_name"),
                         rs.getString("father_number"),
                         rs.getString("dob")
@@ -54,17 +58,19 @@ public class StudentDAO {
 
 
     public int add(Student s) throws SQLException{
-        String sql = "INSERT INTO students (admission_number, name, age, class_no, address, marks, father_name, father_number, dob) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
+        String sql = "INSERT INTO students (admission_number, name, age, class_no, address, first_internal, second_internal, term_exam, father_name, father_number, dob) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
         try (Connection c=DBConnection.getConnection(); PreparedStatement p=c.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)){
             p.setString(1,s.getAdmissionNumber());
             p.setString(2,s.getName());
             p.setInt(3,s.getAge());
             p.setInt(4,s.getClassNo());
             p.setString(5,s.getAddress());
-            p.setString(6,s.getMarks());
-            p.setString(7,s.getFatherName());
-            p.setString(8,s.getFatherNumber());
-            p.setString(9,s.getDob());
+            p.setString(6,s.getFirstInternal());
+            p.setString(7,s.getSecondInternal());
+            p.setString(8,s.getTermExam());
+            p.setString(9,s.getFatherName());
+            p.setString(10,s.getFatherNumber());
+            p.setString(11,s.getDob());
             p.executeUpdate();
             try(ResultSet rs=p.getGeneratedKeys()){ if (rs.next()) return rs.getInt(1); }
         }
@@ -73,19 +79,34 @@ public class StudentDAO {
 
 
     public void update(Student s) throws SQLException{
-        String sql = "UPDATE students SET admission_number=?, name=?, age=?, class_no=?, address=?, marks=?, father_name=?, father_number=?, dob=? WHERE id=?";
+        String sql = "UPDATE students SET admission_number=?, name=?, age=?, class_no=?, address=?, first_internal=?, second_internal=?, term_exam=?, father_name=?, father_number=?, dob=? WHERE id=?";
         try (Connection c=DBConnection.getConnection(); PreparedStatement p=c.prepareStatement(sql)){
             p.setString(1,s.getAdmissionNumber());
             p.setString(2,s.getName());
             p.setInt(3,s.getAge());
             p.setInt(4,s.getClassNo());
             p.setString(5,s.getAddress());
-            p.setString(6,s.getMarks());
-            p.setString(7,s.getFatherName());
-            p.setString(8,s.getFatherNumber());
-            p.setString(9,s.getDob());
-            p.setInt(10,s.getId());
-            p.executeUpdate();
+            p.setString(6,s.getFirstInternal());
+            p.setString(7,s.getSecondInternal());
+            p.setString(8,s.getTermExam());
+            p.setString(9,s.getFatherName());
+            p.setString(10,s.getFatherNumber());
+            p.setString(11,s.getDob());
+            p.setInt(12,s.getId());
+            int affected = p.executeUpdate();
+            if (affected == 0) {
+                System.err.println("[DEBUG] StudentDAO.update: No rows updated for student id=" + s.getId());
+            } else {
+                System.out.println("[DEBUG] StudentDAO.update: Updated student id=" + s.getId());
+            }
+        } catch (SQLException ex) {
+            System.err.println("[DEBUG] StudentDAO.update: SQL error for student id=" + s.getId());
+            ex.printStackTrace();
+            throw ex;
+        } catch (Exception ex) {
+            System.err.println("[DEBUG] StudentDAO.update: General error for student id=" + s.getId());
+            ex.printStackTrace();
+            throw new SQLException("General error in StudentDAO.update", ex);
         }
     }
 

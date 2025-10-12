@@ -12,7 +12,7 @@ import javax.swing.table.DefaultTableModel;
 
 public class Main {
     private JFrame frame;
-    private UserDAO userDAO = new UserDAO();
+    private final UserDAO userDAO = new UserDAO();
     private StudentDAO studentDAO = new StudentDAO();
     private TeacherDAO teacherDAO = new TeacherDAO();
 
@@ -110,7 +110,7 @@ public class Main {
             String u = tfUser.getText().trim(); String pw = new String(tfPass.getPassword()).trim();
             try {
                 User user = userDAO.findByUsernameAndPassword(u, pw);
-                if (user==null) { JOptionPane.showMessageDialog(frame,"Invalid credentials"); return; }
+                if (user==null) { JOptionPane.showMessageDialog(frame,"Invalid Username or password"); return; }
                 frame.dispose();
                 switch(user.getRole()){
                     case "ADMIN": showAdminPanel(); break;
@@ -132,6 +132,32 @@ public class Main {
 
         JTabbedPane tabs = new JTabbedPane();
 
+        // --- Home Tab ---
+        JPanel homePanel = new JPanel();
+        homePanel.setLayout(new BoxLayout(homePanel, BoxLayout.Y_AXIS));
+        homePanel.setBackground(new Color(240, 248, 255));
+        homePanel.setBorder(BorderFactory.createEmptyBorder(40, 40, 40, 40));
+
+        JLabel welcomeLabel = new JLabel("Hogwarts School Management System", JLabel.CENTER);
+        welcomeLabel.setFont(new Font("Serif", Font.BOLD, 30));
+        welcomeLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
+
+        JLabel infoLabel = new JLabel("<html><div style='text-align:center;'>"
+            + "This school is not a normal school we give admission to the kids having different magical skills<br>"
+            + "Harry Potter , Ron Weasley and Hermione are a proud alumini.<br>"
+                +"Albus dumbledore the headmaster is a very encouraging person.<br> He helps students and supports them always.<br>"
+            +"Voldemort is our principal  '_'<br>"
+            + "<b>Contact:</b> hogwarts@school.edu<br>"
+            + "<b>Phone:</b>1234567890<br>"
+            + "</div></html>", JLabel.CENTER);
+        infoLabel.setFont(new Font("SansSerif", Font.PLAIN, 16));
+        infoLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
+
+        homePanel.add(welcomeLabel);
+        homePanel.add(Box.createRigidArea(new Dimension(0, 30)));
+        homePanel.add(infoLabel);
+
+
         // --- Students Tab ---
         JPanel studentPanel = new JPanel(new BorderLayout());
 
@@ -143,7 +169,7 @@ public class Main {
         JPanel studentSearchPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
         JTextField studentSearchField = new JTextField(20);
         JButton studentSearchBtn = new JButton("Search");
-        JButton studentBackBtn = new JButton("Back");
+        JButton studentBackBtn = new JButton("Logout");
         studentSearchPanel.add(new JLabel("Search Student by ID/Name:"));
         studentSearchPanel.add(studentSearchField);
         studentSearchPanel.add(studentSearchBtn);
@@ -182,15 +208,35 @@ public class Main {
             String query = studentSearchField.getText().trim().toLowerCase();
             try {
                 studentModel.setRowCount(0);
+                int count = 0;
                 for (Student s : studentDAO.getAll()) {
                     if (query.isEmpty() ||
-                        String.valueOf(s.getId()).equalsIgnoreCase(query) ||
-                        s.getName().toLowerCase().contains(query) ||
-                        s.getAdmissionNumber().toLowerCase().contains(query)) {
-                        studentModel.addRow(new Object[]{s.getId(), s.getAdmissionNumber(), s.getName(), s.getClassNo(), s.getAge()});
+                            String.valueOf(s.getId()).equalsIgnoreCase(query) ||
+                            s.getName().toLowerCase().contains(query) ||
+                            s.getAdmissionNumber().toLowerCase().contains(query)) {
+                        studentModel.addRow(new Object[]{
+                                s.getId(),
+                                s.getAdmissionNumber(),
+                                s.getName(),
+                                s.getClassNo(),
+                                s.getAge()
+                        });
+                        count++;
                     }
                 }
-            } catch (SQLException ex) { showErr(ex); }
+                // If no records found, show message
+                if (count == 0) {
+                    JOptionPane.showMessageDialog(
+                            studentPanel,
+                            "No record found!",
+                            "Search Result",
+                            JOptionPane.INFORMATION_MESSAGE
+                    );
+                    studentSearchField.setText("");
+                }
+            } catch (SQLException ex) {
+                showErr(ex);
+            }
         });
 
         studentBackBtn.addActionListener(e -> {
@@ -273,18 +319,24 @@ public class Main {
 
         teacherSearchBtn.addActionListener(e -> {
             String query = teacherSearchField.getText().trim().toLowerCase();
-            try {
+            int matchingRecordsCount = 0;
+            try{
                 teacherModel.setRowCount(0);
                 for (Teacher t : teacherDAO.getAll()) {
                     if (query.isEmpty() ||
-                        String.valueOf(t.getId()).equalsIgnoreCase(query) ||
-                        t.getName().toLowerCase().contains(query)) {
+                            String.valueOf(t.getId()).equalsIgnoreCase(query) ||
+                            t.getName().toLowerCase().contains(query)) {
                         teacherModel.addRow(new Object[]{t.getId(), t.getName(), t.getSubject(), t.getQualification(), t.getClassAssigned()});
+                        matchingRecordsCount++;
                     }
                 }
-            } catch (SQLException ex) { showErr(ex); }
-        });
-
+                if (matchingRecordsCount == 0) {
+                    teacherModel.addRow(new Object[]{ "No records found"});
+                    teacherSearchField.setText("");
+                }
+            } catch (SQLException ex) {
+                showErr(ex);
+            }});
         addTeacher.addActionListener(e -> {
             TeacherForm form = new TeacherForm(null);
             int res = JOptionPane.showConfirmDialog(null, form.getPanel(), "Add Teacher", JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE);
@@ -329,6 +381,7 @@ public class Main {
         // --- Classes Tab ---
         JPanel classPanel = adminClassesPanel();
 
+        tabs.addTab("Home", homePanel);
         tabs.addTab("Students", studentPanel);
         tabs.addTab("Teachers", teacherPanel);
         tabs.addTab("Classes", classPanel);
@@ -341,15 +394,106 @@ public class Main {
 
     private JPanel adminClassesPanel(){
         JPanel p = new JPanel(new BorderLayout());
-        DefaultTableModel model = new DefaultTableModel(new String[]{"Class","No. of Students","Students (Names)"},0){ public boolean isCellEditable(int r,int c){return false;} };
+
+        DefaultTableModel model = new DefaultTableModel(new String[]{"Class","No. of Students","Class Teacher"},0){
+            public boolean isCellEditable(int r,int c){return false;}
+        };
         JTable table = new JTable(model);
         p.add(new JScrollPane(table), BorderLayout.CENTER);
-        JButton refreshBtn = new JButton("Refresh"); p.add(refreshBtn, BorderLayout.SOUTH);
 
+        JPanel bottomPanel = new JPanel(new BorderLayout());
+        JButton refreshBtn = new JButton("Refresh");
+        JButton addClassBtn = new JButton("Add Class");
+        JPanel btnPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
+        btnPanel.add(addClassBtn);
+        btnPanel.add(refreshBtn);
+        bottomPanel.add(btnPanel, BorderLayout.EAST);
+        p.add(bottomPanel, BorderLayout.SOUTH);
 
-        Runnable refresh = () -> { try { model.setRowCount(0); for (int cls=1; cls<=10; cls++){ int count = studentDAO.countByClass(cls); List<Student> s = studentDAO.getByClass(cls); String names = ""; for (Student st: s) names += st.getName() + ", "; if (names.endsWith(", ")) names = names.substring(0, names.length()-2); model.addRow(new Object[]{cls, count, names}); } } catch(SQLException ex){ showErr(ex);} };
+        Runnable refresh = () -> {
+            try {
+                model.setRowCount(0);
+                for (int cls = 1; cls <= 10; cls++){
+                    int count = studentDAO.countByClass(cls);
+                    String classTeacherName = teacherDAO.getNameByClass(cls);
+                    if (classTeacherName == null || classTeacherName.trim().isEmpty()) {
+                        classTeacherName = "Unassigned";
+                    }
+                    model.addRow(new Object[]{cls, count, classTeacherName});
+                }
+            } catch(SQLException ex){
+                showErr(ex);
+            }
+        };
+
         refresh.run();
         refreshBtn.addActionListener(e -> refresh.run());
+
+        // Show students in class on row click
+        table.addMouseListener(new java.awt.event.MouseAdapter() {
+            public void mouseClicked(java.awt.event.MouseEvent evt) {
+                if (evt.getClickCount() == 1 && table.getSelectedRow() != -1) {
+                    int row = table.getSelectedRow();
+                    int classNo = Integer.parseInt(model.getValueAt(row, 0).toString());
+                    try {
+                        List<Student> students = studentDAO.getByClass(classNo);
+                        if (students.isEmpty()) {
+                            JOptionPane.showMessageDialog(p, "No students found in this class.", "Class Students", JOptionPane.INFORMATION_MESSAGE);
+                            return;
+                        }
+                        JDialog dialog = new JDialog((Frame) null, "Students in Class " + classNo, true);
+                        DefaultTableModel studentModel = new DefaultTableModel(
+                            new String[]{"ID", "Admission Number", "Name", "Age", "Address"}, 0
+                        ) {
+                            public boolean isCellEditable(int r, int c) { return false; }
+                        };
+                        for (Student s : students) {
+                            studentModel.addRow(new Object[]{
+                                s.getId(),
+                                s.getAdmissionNumber(),
+                                s.getName(),
+                                s.getAge(),
+                                s.getAddress()
+                            });
+                        }
+                        JTable studentTable = new JTable(studentModel);
+                        studentTable.setRowHeight(24);
+                        studentTable.getTableHeader().setFont(new Font("SansSerif", Font.BOLD, 13));
+                        JScrollPane scroll = new JScrollPane(studentTable);
+
+                        dialog.getContentPane().add(scroll, BorderLayout.CENTER);
+                        dialog.setSize(600, 400);
+                        dialog.setLocationRelativeTo(null);
+                        dialog.setVisible(true);
+                    } catch (SQLException ex) {
+                        showErr(ex);
+                    }
+                }
+            }
+        });
+
+        // Add class logic (simple example: prompt for class number and teacher name)
+        addClassBtn.addActionListener(e -> {
+            JPanel form = new JPanel(new GridLayout(2,2,5,5));
+            JTextField classNoField = new JTextField();
+            JTextField teacherNameField = new JTextField();
+            form.add(new JLabel("Grade:")); form.add(classNoField);
+            form.add(new JLabel("Class Teacher Name:")); form.add(teacherNameField);
+            int res = JOptionPane.showConfirmDialog(p, form, "Add Class", JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE);
+            if (res == JOptionPane.OK_OPTION) {
+                try {
+                    int classNo = Integer.parseInt(classNoField.getText().trim());
+                    String teacherName = teacherNameField.getText().trim();
+                    // You may need to implement addClass in your DAO, here is a simple placeholder:
+                    teacherDAO.assignTeacherToClass(teacherName, classNo); // You must implement this method in TeacherDAO
+                    refresh.run();
+                    JOptionPane.showMessageDialog(p, "Class added/updated successfully.");
+                } catch (Exception ex) {
+                    showErr(ex);
+                }
+            }
+        });
+
         return p;
     }
     // ----------------- Teacher Panel -----------------
@@ -378,15 +522,16 @@ public class Main {
         JPanel searchPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
         JTextField searchField = new JTextField(20);
         JButton searchBtn = new JButton("Search");
-        JButton backBtn = new JButton("Back");
+        JButton backBtn = new JButton("Logout");
         searchPanel.add(new JLabel("Search Student by ID/Name:"));
         searchPanel.add(searchField);
         searchPanel.add(searchBtn);
         searchPanel.add(backBtn);
         p.add(searchPanel, BorderLayout.NORTH);
 
+        // Remove "Marks" column
         DefaultTableModel model = new DefaultTableModel(
-            new String[]{"ID","Name","Age","Class","Address","Marks"}, 0
+            new String[]{"ID","Name","Age","Class"}, 0
         ) {
             public boolean isCellEditable(int r,int c){return false;}
         };
@@ -402,11 +547,12 @@ public class Main {
             try {
                 model.setRowCount(0);
                 if (teacher.getClassAssigned()==null){
-                    JOptionPane.showMessageDialog(null,"No class assigned to you."); return;
+                    JOptionPane.showMessageDialog(null,"No class assigned.");
+                    return;
                 }
                 List<Student> list = studentDAO.getByClass(teacher.getClassAssigned());
                 for (Student s: list)
-                    model.addRow(new Object[]{s.getId(), s.getName(), s.getAge(), s.getClassNo(), s.getAddress(), s.getMarks()});
+                    model.addRow(new Object[]{s.getId(), s.getName(), s.getAge(), s.getClassNo()});
             } catch(SQLException ex){ showErr(ex); }
         };
         refresh.run();
@@ -421,7 +567,7 @@ public class Main {
                     if (query.isEmpty() ||
                         String.valueOf(s.getId()).equalsIgnoreCase(query) ||
                         s.getName().toLowerCase().contains(query)) {
-                        model.addRow(new Object[]{s.getId(), s.getName(), s.getAge(), s.getClassNo(), s.getAddress(), s.getMarks()});
+                        model.addRow(new Object[]{s.getId(), s.getName(), s.getAge(), s.getClassNo()});
                     }
                 }
             } catch(SQLException ex){ showErr(ex); }
@@ -434,17 +580,55 @@ public class Main {
 
         enterMarks.addActionListener(e -> {
             int r = table.getSelectedRow();
-            if (r==-1){ JOptionPane.showMessageDialog(null,"Select a student"); return; }
-            int id = Integer.parseInt(model.getValueAt(r,0).toString());
-            String currentMarks = model.getValueAt(r,5).toString();
-            String nv = JOptionPane.showInputDialog(null, "Enter marks (simple text, e.g. Math:80,Eng:75):", currentMarks);
-            if (nv!=null){
+            if (r == -1) {
+                JOptionPane.showMessageDialog(null, "Select a student");
+                return;
+            }
+            int id = Integer.parseInt(model.getValueAt(r, 0).toString());
+            Student s = null;
+            try {
+                for (Student st : studentDAO.getByClass(teacher.getClassAssigned())) if (st.getId() == id) s = st;
+            } catch (SQLException ex) { showErr(ex); return; }
+            if (s == null) {
+                JOptionPane.showMessageDialog(null, "You can only edit students of your class.");
+                return;
+            }
+
+            String[] exams = {"First Internal", "Second Internal", "Term Exam"};
+            JComboBox<String> examBox = new JComboBox<>(exams);
+
+            JTextField marksField = new JTextField(30);
+            // Set initial value based on selected exam
+            String selectedExam = exams[0];
+            if (selectedExam.equals("First Internal")) marksField.setText(s.getFirstInternal());
+            else if (selectedExam.equals("Second Internal")) marksField.setText(s.getSecondInternal());
+            else if (selectedExam.equals("Term Exam")) marksField.setText(s.getTermExam());
+
+            Student finalS = s;
+            examBox.addActionListener(ev -> {
+                String examSel = (String) examBox.getSelectedItem();
+                if (examSel.equals("First Internal")) marksField.setText(finalS.getFirstInternal());
+                else if (examSel.equals("Second Internal")) marksField.setText(finalS.getSecondInternal());
+                else if (examSel.equals("Term Exam")) marksField.setText(finalS.getTermExam());
+            });
+
+            JPanel marksPanel = new JPanel(new GridLayout(2,2,8,8));
+            marksPanel.add(new JLabel("Examination:")); marksPanel.add(examBox);
+            marksPanel.add(new JLabel("Marks:")); marksPanel.add(marksField);
+
+            int res = JOptionPane.showConfirmDialog(null, marksPanel, "Enter/Update Marks", JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE);
+            if (res == JOptionPane.OK_OPTION) {
+                String examSel = (String) examBox.getSelectedItem();
+                String enteredMarks = marksField.getText().trim();
                 try {
-                    Student s = null;
-                    for (Student st: studentDAO.getByClass(teacher.getClassAssigned())) if (st.getId()==id) s=st;
-                    if (s==null){ JOptionPane.showMessageDialog(null,"You can only edit students of your class."); return; }
-                    s.setMarks(nv); studentDAO.update(s); refresh.run();
-                } catch(SQLException ex){ showErr(ex); }
+                    if (examSel.equals("First Internal")) s.setFirstInternal(enteredMarks);
+                    else if (examSel.equals("Second Internal")) s.setSecondInternal(enteredMarks);
+                    else if (examSel.equals("Term Exam")) s.setTermExam(enteredMarks);
+                    studentDAO.update(s); // persists marks until further edited
+                    refresh.run();
+                } catch (SQLException ex) {
+                    showErr(ex);
+                }
             }
         });
 
@@ -494,18 +678,36 @@ public class Main {
         private JComboBox<Integer> classBox = new JComboBox<>();
         private JTextField usernameField = new JTextField(12);
         private JTextField passwordField = new JTextField(12);
+
         public TeacherForm(Teacher t){
             panel = new JPanel(new GridLayout(6,2,5,5));
             panel.add(new JLabel("Name:")); panel.add(nameField);
             panel.add(new JLabel("Subject:")); panel.add(subjectField);
             panel.add(new JLabel("Qualification:")); panel.add(qualField);
-            panel.add(new JLabel("Class Assigned (1-10):")); for(int i=1;i<=10;i++) classBox.addItem(i); panel.add(classBox);
+            panel.add(new JLabel("Class Assigned (optional):"));
+            classBox.addItem(null); // allow no selection
+            for(int i=1;i<=10;i++) classBox.addItem(i);
+            panel.add(classBox);
             panel.add(new JLabel("Login username:")); panel.add(usernameField);
             panel.add(new JLabel("Login password:")); panel.add(passwordField);
-            if (t!=null){ nameField.setText(t.getName()); subjectField.setText(t.getSubject()); qualField.setText(t.getQualification()); if (t.getClassAssigned()!=null) classBox.setSelectedItem(t.getClassAssigned()); }
+            if (t!=null){
+                nameField.setText(t.getName());
+                subjectField.setText(t.getSubject());
+                qualField.setText(t.getQualification());
+                if (t.getClassAssigned()!=null) classBox.setSelectedItem(t.getClassAssigned());
+                else classBox.setSelectedItem(null);
+            }
         }
         public JPanel getPanel(){ return panel; }
-        public Teacher toTeacher(){ return new Teacher(nameField.getText().trim(), subjectField.getText().trim(), qualField.getText().trim(), (Integer)classBox.getSelectedItem()); }
+        public Teacher toTeacher(){
+            Integer classAssigned = (Integer)classBox.getSelectedItem();
+            return new Teacher(
+                nameField.getText().trim(),
+                subjectField.getText().trim(),
+                qualField.getText().trim(),
+                classAssigned
+            );
+        }
     }
 
 
@@ -513,37 +715,98 @@ public class Main {
     class StudentForm {
         private JPanel panel;
         private JTextField admissionNumberField = new JTextField();
-
         private JTextField nameField = new JTextField(20);
         private JTextField ageField = new JTextField(4);
-        private JComboBox<Integer> classBox = new JComboBox<>();
+        private JComboBox<String> classBox = new JComboBox<>(new String[]{"1","2","3","4","5","6","7","8","9","10"});
         private JTextField addressField = new JTextField(30);
-        private JTextField marksField = new JTextField(30);
+        private JTextField firstInternalField = new JTextField(30);
+        private JTextField secondInternalField = new JTextField(30);
+        private JTextField termExamField = new JTextField(30);
         private JTextField fatherNameField = new JTextField(20);
         private JTextField fatherNumberField = new JTextField(20);
         private JTextField dobField = new JTextField(12);
         private JTextField usernameField = new JTextField(12);
         private JTextField passwordField = new JTextField(12);
+
         public StudentForm(Student s){
-            panel = new JPanel(new GridLayout(10,2,5,5));
-            panel.add(new JLabel("AdmissionNumber:"));panel.add(admissionNumberField);
-            panel.add(new JLabel("Name:")); panel.add(nameField);
-            panel.add(new JLabel("Age:")); panel.add(ageField);
-            panel.add(new JLabel("Class (1-10):")); for(int i=1;i<=10;i++) classBox.addItem(i); panel.add(classBox);
-            panel.add(new JLabel("Address:")); panel.add(addressField);
-            panel.add(new JLabel("Father's Name:")); panel.add(fatherNameField);
-            panel.add(new JLabel("Father's Number:")); panel.add(fatherNumberField);
-            panel.add(new JLabel("DOB:")); panel.add(dobField);
-            panel.add(new JLabel("Marks (e.g. Math:0,Eng:0):")); panel.add(marksField);
-            panel.add(new JLabel("Login username:")); panel.add(usernameField);
-            panel.add(new JLabel("Login password:")); panel.add(passwordField);
+            panel = new JPanel(new GridBagLayout());
+            GridBagConstraints gbc = new GridBagConstraints();
+            gbc.insets = new Insets(6, 8, 6, 8);
+            gbc.fill = GridBagConstraints.HORIZONTAL;
+            gbc.gridx = 0; gbc.gridy = 0;
+            panel.add(new JLabel("Admission Number:"), gbc);
+            gbc.gridx = 1;
+            panel.add(admissionNumberField, gbc);
+
+            gbc.gridx = 0; gbc.gridy++;
+            panel.add(new JLabel("Name:"), gbc);
+            gbc.gridx = 1;
+            panel.add(nameField, gbc);
+
+            gbc.gridx = 0; gbc.gridy++;
+            panel.add(new JLabel("Age:"), gbc);
+            gbc.gridx = 1;
+            panel.add(ageField, gbc);
+
+            gbc.gridx = 0; gbc.gridy++;
+            panel.add(new JLabel("Class:"), gbc);
+            gbc.gridx = 1;
+            panel.add(classBox, gbc);
+
+            gbc.gridx = 0; gbc.gridy++;
+            panel.add(new JLabel("Address:"), gbc);
+            gbc.gridx = 1;
+            panel.add(addressField, gbc);
+
+            gbc.gridx = 0; gbc.gridy++;
+            panel.add(new JLabel("First Internal:"), gbc);
+            gbc.gridx = 1;
+            panel.add(firstInternalField, gbc);
+
+            gbc.gridx = 0; gbc.gridy++;
+            panel.add(new JLabel("Second Internal:"), gbc);
+            gbc.gridx = 1;
+            panel.add(secondInternalField, gbc);
+
+            gbc.gridx = 0; gbc.gridy++;
+            panel.add(new JLabel("Term Exam:"), gbc);
+            gbc.gridx = 1;
+            panel.add(termExamField, gbc);
+
+            gbc.gridx = 0; gbc.gridy++;
+            panel.add(new JLabel("Father's Name:"), gbc);
+            gbc.gridx = 1;
+            panel.add(fatherNameField, gbc);
+
+            gbc.gridx = 0; gbc.gridy++;
+            panel.add(new JLabel("Father's Number:"), gbc);
+            gbc.gridx = 1;
+            panel.add(fatherNumberField, gbc);
+
+            gbc.gridx = 0; gbc.gridy++;
+            panel.add(new JLabel("DOB:"), gbc);
+            gbc.gridx = 1;
+            panel.add(dobField, gbc);
+
+            gbc.gridx = 0; gbc.gridy++;
+            panel.add(new JLabel("Login username:"), gbc);
+            gbc.gridx = 1;
+            panel.add(usernameField, gbc);
+
+            gbc.gridx = 0; gbc.gridy++;
+            panel.add(new JLabel("Login password:"), gbc);
+            gbc.gridx = 1;
+            panel.add(passwordField, gbc);
+
             if (s!=null){
                 admissionNumberField.setText(s.getAdmissionNumber());
                 nameField.setText(s.getName());
                 ageField.setText(String.valueOf(s.getAge()));
                 classBox.setSelectedItem(s.getClassNo());
                 addressField.setText(s.getAddress());
-                marksField.setText(s.getMarks());
+                firstInternalField.setText(s.getFirstInternal());
+                secondInternalField.setText(s.getSecondInternal());
+                termExamField.setText(s.getTermExam());
                 fatherNameField.setText(s.getFatherName());
                 fatherNumberField.setText(s.getFatherNumber());
                 dobField.setText(s.getDob());
@@ -556,9 +819,11 @@ public class Main {
                 admissionNumberField.getText().trim(),
                 nameField.getText().trim(),
                 age,
-                (Integer)classBox.getSelectedItem(),
+                (Integer) classBox.getSelectedItem(),
                 addressField.getText().trim(),
-                marksField.getText().trim(),
+                firstInternalField.getText().trim(),
+                secondInternalField.getText().trim(),
+                termExamField.getText().trim(),
                 fatherNameField.getText().trim(),
                 fatherNumberField.getText().trim(),
                 dobField.getText().trim()
@@ -581,10 +846,12 @@ public class Main {
         panel.add(new JLabel("Class:")); panel.add(new JLabel(String.valueOf(s.getClassNo())));
         panel.add(new JLabel("Age:")); panel.add(new JLabel(String.valueOf(s.getAge())));
         panel.add(new JLabel("Address:")); panel.add(new JLabel(s.getAddress()));
+        panel.add(new JLabel("First Internal:")); panel.add(new JLabel(s.getFirstInternal()));
+        panel.add(new JLabel("Second Internal:")); panel.add(new JLabel(s.getSecondInternal()));
+        panel.add(new JLabel("Term Exam:")); panel.add(new JLabel(s.getTermExam()));
         panel.add(new JLabel("Father's Name:")); panel.add(new JLabel(s.getFatherName()));
         panel.add(new JLabel("Father's Number:")); panel.add(new JLabel(s.getFatherNumber()));
         panel.add(new JLabel("DOB:")); panel.add(new JLabel(s.getDob()));
-        panel.add(new JLabel("Marks:")); panel.add(new JLabel(s.getMarks()));
 
         JButton updateBtn = new JButton("Update");
         JButton deleteBtn = new JButton("Delete");
@@ -625,5 +892,44 @@ public class Main {
         });
 
         dialog.setVisible(true);
+    }
+
+    // Helper to parse marks string into a map: exam -> subject -> mark
+    private java.util.Map<String, java.util.Map<String, String>> parseMarks(String marksStr) {
+        java.util.Map<String, java.util.Map<String, String>> examMap = new java.util.HashMap<>();
+        if (marksStr == null || marksStr.trim().isEmpty()) return examMap;
+        // Example: "First Internal: Math:80, English:90, ...; Term Exam: Math:85, English:88, ..."
+        String[] exams = marksStr.split(";");
+        for (String examEntry : exams) {
+            examEntry = examEntry.trim();
+            if (examEntry.isEmpty()) continue;
+            int idx = examEntry.indexOf(":");
+            if (idx == -1) continue;
+            String examName = examEntry.substring(0, idx).trim();
+            String subjectsStr = examEntry.substring(idx + 1).trim();
+            java.util.Map<String, String> subjectMap = new java.util.HashMap<>();
+            for (String subjMark : subjectsStr.split(",")) {
+                String[] pair = subjMark.split(":");
+                if (pair.length == 2) subjectMap.put(pair[0].trim(), pair[1].trim());
+            }
+            examMap.put(examName, subjectMap);
+        }
+        return examMap;
+    }
+
+    // Helper to serialize marks map back to string
+    private String serializeMarks(java.util.Map<String, java.util.Map<String, String>> examMap) {
+        StringBuilder sb = new StringBuilder();
+        for (String exam : examMap.keySet()) {
+            sb.append(exam).append(": ");
+            java.util.Map<String, String> subjectMap = examMap.get(exam);
+            int i = 0;
+            for (String subj : subjectMap.keySet()) {
+                sb.append(subj).append(":").append(subjectMap.get(subj));
+                if (++i < subjectMap.size()) sb.append(", ");
+            }
+            sb.append("; ");
+        }
+        return sb.toString().trim();
     }
 }

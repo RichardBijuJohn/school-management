@@ -11,11 +11,9 @@ public class ClassDAO {
     // Fetch all classes
     public List<Class> getAllClasses() {
         List<Class> classList = new ArrayList<>();
-
         try (Connection conn = DBConnection.getConnection();
-             Statement stmt = conn.createStatement();
-             ResultSet rs = stmt.executeQuery("SELECT * FROM class")) {
-
+             PreparedStatement ps = conn.prepareStatement("SELECT id, grade, total_strength, class_teacher FROM class");
+             ResultSet rs = ps.executeQuery()) {
             while (rs.next()) {
                 Class c = new Class(
                         rs.getInt("id"),
@@ -25,11 +23,9 @@ public class ClassDAO {
                 );
                 classList.add(c);
             }
-
-        } catch (Exception e) {
+        } catch (SQLException e) {
             e.printStackTrace();
         }
-
         return classList;
     }
 
@@ -38,15 +34,12 @@ public class ClassDAO {
         String sql = "INSERT INTO class (grade, total_strength, class_teacher) VALUES (?, ?, ?)";
         try (Connection conn = DBConnection.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
-
             ps.setString(1, grade);
             ps.setInt(2, totalStrength);
             ps.setString(3, teacher);
-
-            ps.executeUpdate();
-            return true;
-
-        } catch (Exception e) {
+            int affected = ps.executeUpdate();
+            return affected > 0;
+        } catch (SQLException e) {
             e.printStackTrace();
             return false;
         }
