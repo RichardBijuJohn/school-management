@@ -75,6 +75,7 @@ public class Main {
         GridBagConstraints gbc = new GridBagConstraints();
         gbc.insets = new Insets(10, 10, 10, 10);
         gbc.fill = GridBagConstraints.HORIZONTAL;
+        
 
 
         gbc.gridx = 0; gbc.gridy = 0;
@@ -110,7 +111,14 @@ public class Main {
             String u = tfUser.getText().trim(); String pw = new String(tfPass.getPassword()).trim();
             try {
                 User user = userDAO.findByUsernameAndPassword(u, pw);
-                if (user==null) { JOptionPane.showMessageDialog(frame,"Invalid Username or password"); return; }
+                if (user == null) {
+                    showStyledError(frame, 
+                        "The username or password you entered is incorrect.\nPlease try again.", 
+                        "Login Failed");
+                    tfPass.setText("");
+                    tfUser.requestFocus();
+                    return;
+                }
                 frame.dispose();
                 switch(user.getRole()){
                     case "ADMIN": showAdminPanel(); break;
@@ -124,6 +132,10 @@ public class Main {
 
         frame.setLocationRelativeTo(null);
         frame.setVisible(true);
+    }
+    // Styled error dialog
+    private void showStyledError(JFrame parent, String message, String title) {
+        JOptionPane.showMessageDialog(parent, message, title, JOptionPane.ERROR_MESSAGE);
     }
     private void showAdminPanel(){
         JFrame f = new JFrame("Admin Panel");
@@ -579,58 +591,128 @@ public class Main {
         });
 
         enterMarks.addActionListener(e -> {
-            int r = table.getSelectedRow();
-            if (r == -1) {
-                JOptionPane.showMessageDialog(null, "Select a student");
-                return;
-            }
-            int id = Integer.parseInt(model.getValueAt(r, 0).toString());
-            Student s = null;
-            try {
-                for (Student st : studentDAO.getByClass(teacher.getClassAssigned())) if (st.getId() == id) s = st;
-            } catch (SQLException ex) { showErr(ex); return; }
-            if (s == null) {
-                JOptionPane.showMessageDialog(null, "You can only edit students of your class.");
-                return;
-            }
+    int r = table.getSelectedRow();
+    if (r == -1) {
+        JOptionPane.showMessageDialog(null, "Select a student");
+        return;
+    }
+    int id = Integer.parseInt(model.getValueAt(r, 0).toString());
+    Student s = null;
+    try {
+        for (Student st : studentDAO.getByClass(teacher.getClassAssigned()))
+            if (st.getId() == id) s = st;
+    } catch (SQLException ex) { showErr(ex); return; }
 
-            String[] exams = {"First Internal", "Second Internal", "Term Exam"};
-            JComboBox<String> examBox = new JComboBox<>(exams);
+    if (s == null) {
+        JOptionPane.showMessageDialog(null, "You can only edit students of your class.");
+        return;
+    }
 
-            JTextField marksField = new JTextField(30);
-            // Set initial value based on selected exam
-            String selectedExam = exams[0];
-            if (selectedExam.equals("First Internal")) marksField.setText(s.getFirstInternal());
-            else if (selectedExam.equals("Second Internal")) marksField.setText(s.getSecondInternal());
-            else if (selectedExam.equals("Term Exam")) marksField.setText(s.getTermExam());
+    // Dropdown for exam selection
+    String[] exams = {"First Internal", "Second Internal", "Term Exam"};
+    JComboBox<String> examBox = new JComboBox<>(exams);
 
-            Student finalS = s;
-            examBox.addActionListener(ev -> {
-                String examSel = (String) examBox.getSelectedItem();
-                if (examSel.equals("First Internal")) marksField.setText(finalS.getFirstInternal());
-                else if (examSel.equals("Second Internal")) marksField.setText(finalS.getSecondInternal());
-                else if (examSel.equals("Term Exam")) marksField.setText(finalS.getTermExam());
-            });
+    // Subjects list
+    String[] subjects = {
+        "English", "Maths", "Science", "Social", "Hindi",
+        "Computer", "Physics", "Chemistry", "Biology", "History"
+    };
 
-            JPanel marksPanel = new JPanel(new GridLayout(2,2,8,8));
-            marksPanel.add(new JLabel("Examination:")); marksPanel.add(examBox);
-            marksPanel.add(new JLabel("Marks:")); marksPanel.add(marksField);
+    // Create a map of subject -> JTextField
+    java.util.Map<String, JTextField> subjectFields = new java.util.HashMap<>();
 
-            int res = JOptionPane.showConfirmDialog(null, marksPanel, "Enter/Update Marks", JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE);
-            if (res == JOptionPane.OK_OPTION) {
-                String examSel = (String) examBox.getSelectedItem();
-                String enteredMarks = marksField.getText().trim();
-                try {
-                    if (examSel.equals("First Internal")) s.setFirstInternal(enteredMarks);
-                    else if (examSel.equals("Second Internal")) s.setSecondInternal(enteredMarks);
-                    else if (examSel.equals("Term Exam")) s.setTermExam(enteredMarks);
-                    studentDAO.update(s); // persists marks until further edited
-                    refresh.run();
-                } catch (SQLException ex) {
-                    showErr(ex);
+    JPanel marksPanel = new JPanel(new GridLayout(subjects.length + 1, 2, 8, 8));
+    marksPanel.add(new JLabel("Examination:"));
+    marksPanel.add(examBox);
+
+    // Add text fields for each subject
+    for (String subject : subjects) {
+        marksPanel.add(new JLabel(subject + ":"));
+        JTextField field = new JTextField(5);
+        subjectFields.put(subject, field);
+        marksPanel.add(field);
+    }
+
+    // Helper method to populate marks from string
+    final Student selectedStudent = s;
+    Runnable populateMarks = () -> {
+        String examSel = (String) examBox.getSelectedItem();
+        String existingMarks = "";
+        
+        if (examSel.equals("First Internal")) {
+            existingMarks = selectedStudent.getFirstInternal();
+        } else if (examSel.equals("Second Internal")) {
+            existingMarks = selectedStudent.getSecondInternal();
+        } else if (examSel.equals("Term Exam")) {
+            existingMarks = selectedStudent.getTermExam();
+        }
+        
+        // Clear all fields first
+        for (JTextField field : subjectFields.values()) {
+            field.setText("");
+        }
+        
+        // Parse existing marks and populate fields
+        if (existingMarks != null && !existingMarks.trim().isEmpty()) {
+            String[] markPairs = existingMarks.split(",");
+            for (String pair : markPairs) {
+                pair = pair.trim();
+                if (pair.contains(":")) {
+                    String[] parts = pair.split(":");
+                    if (parts.length == 2) {
+                        String subject = parts[0].trim();
+                        String mark = parts[1].trim();
+                        if (subjectFields.containsKey(subject)) {
+                            subjectFields.get(subject).setText(mark);
+                        }
+                    }
                 }
             }
-        });
+        }
+    };
+
+    // Populate marks when exam is changed
+    examBox.addActionListener(evt -> populateMarks.run());
+    
+    // Initial population for first exam
+    populateMarks.run();
+
+    // Scrollable dialog if needed
+    JScrollPane scroll = new JScrollPane(marksPanel);
+    scroll.setPreferredSize(new Dimension(400, 350));
+
+    int res = JOptionPane.showConfirmDialog(
+        null, scroll, "Enter/Update Marks",
+        JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE
+    );
+
+    if (res == JOptionPane.OK_OPTION) {
+        String examSel = (String) examBox.getSelectedItem();
+
+        try {
+            // Collect marks entered for each subject
+            StringBuilder marksSummary = new StringBuilder();
+            for (String subject : subjects) {
+                String mark = subjectFields.get(subject).getText().trim();
+                if (mark.isEmpty()) mark = "0";
+                marksSummary.append(subject).append(":").append(mark).append(", ");
+            }
+
+            // Save marks summary to DB
+            // You can store this as a single string in one column per exam
+            if (examSel.equals("First Internal")) s.setFirstInternal(marksSummary.toString());
+            else if (examSel.equals("Second Internal")) s.setSecondInternal(marksSummary.toString());
+            else if (examSel.equals("Term Exam")) s.setTermExam(marksSummary.toString());
+
+            studentDAO.update(s);
+            refresh.run();
+
+        } catch (SQLException ex) {
+            showErr(ex);
+        }
+    }
+});
+
 
         return p;
     }
