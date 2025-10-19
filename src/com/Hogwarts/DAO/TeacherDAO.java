@@ -7,17 +7,22 @@ import java.util.*;
 
 
 public class TeacherDAO {
-    public List<Teacher> getAll() throws SQLException {
+    public List<Teacher> getAll() throws SQLException{
         List<Teacher> list = new ArrayList<>();
         String sql = "SELECT * FROM teachers";
-        try (Connection c=DBConnection.getConnection();
-             PreparedStatement p=c.prepareStatement(sql);
-             ResultSet rs=p.executeQuery()){
-            while (rs.next()) list.add(new Teacher(rs.getInt("id"),
-                    rs.getString("name"),
-                    rs.getString("subject"),
-                    rs.getString("qualification"),
-                    rs.getObject("class_assigned")==null?null:rs.getInt("class_assigned")));
+        try (Connection c=DBConnection.getConnection(); 
+        PreparedStatement p=c.prepareStatement(sql); 
+        ResultSet rs=p.executeQuery()){
+            while (rs.next())
+                list.add(new Teacher(
+                        rs.getInt("id"),
+                        rs.getString("name"),
+                        rs.getString("gender"),
+                        rs.getString("phone_number"),
+                        rs.getString("subject"),
+                        rs.getString("qualification"),
+                        rs.getObject("class_assigned") != null ? rs.getInt("class_assigned") : null
+                ));
         }
         return list;
     }
@@ -43,40 +48,42 @@ public class TeacherDAO {
                 if (rs.next())
                     return new Teacher(rs.getInt("id"),
                             rs.getString("name"),
+                            rs.getString("gender"),
+                            rs.getString("phone_number"),
                             rs.getString("subject"),
                             rs.getString("qualification"),
                             rs.getObject("class_assigned")==null?null:rs.getInt("class_assigned")); }}
         return null;
     }
-    public int add(Teacher t) throws SQLException {
-        String sql = "INSERT INTO teachers (name, subject, qualification, class_assigned) VALUES (?, ?, ?, ?)";
-        try (Connection c=DBConnection.getConnection();
-             PreparedStatement p=c.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)){
+    public int add(Teacher t) throws SQLException{
+        String sql = "INSERT INTO teachers (name, subject, phone_number, qualification, class_assigned, gender) VALUES (?, ?, ?, ?, ?, ?)";
+        try (Connection c=DBConnection.getConnection(); PreparedStatement p=c.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)){
             p.setString(1,t.getName());
             p.setString(2,t.getSubject());
-            p.setString(3,t.getQualification());
-            if (t.getClassAssigned()==null)
-                p.setNull(4, Types.INTEGER);
-            else p.setInt(4, t.getClassAssigned());
+            p.setString(3,t.getPhone_number());
+            p.setString(4,t.getQualification());
+            if (t.getClassAssigned() != null) p.setInt(5, t.getClassAssigned()); 
+            else p.setNull(5, java.sql.Types.INTEGER);
+            p.setString(6, t.getGender());
             p.executeUpdate();
-            try (ResultSet rs=p.getGeneratedKeys()){
-                if (rs.next()) return rs.getInt(1); }
+            try(ResultSet rs=p.getGeneratedKeys()){ if (rs.next()) return rs.getInt(1); }
         }
         return -1;
     }
 
 
-    public void update(Teacher t) throws SQLException {
-        String sql = "UPDATE teachers SET name=?, subject=?, qualification=?, class_assigned=? WHERE id=?";
-        try (Connection c=DBConnection.getConnection();
-             PreparedStatement p=c.prepareStatement(sql)){
+    public void update(Teacher t) throws SQLException{
+        String sql = "UPDATE teachers SET name=?, subject=?, phone_number=?, qualification=?, class_assigned=?, gender=? WHERE id=?";
+        try (Connection c=DBConnection.getConnection(); PreparedStatement p=c.prepareStatement(sql)){
             p.setString(1,t.getName());
             p.setString(2,t.getSubject());
-            p.setString(3,t.getQualification());
-            if (t.getClassAssigned()==null)
-                p.setNull(4, Types.INTEGER);
-            else p.setInt(4, t.getClassAssigned());
-            p.setInt(5,t.getId()); p.executeUpdate();
+            p.setString(3,t.getPhone_number());
+            p.setString(4,t.getQualification());
+            if (t.getClassAssigned() != null) p.setInt(5, t.getClassAssigned()); 
+            else p.setNull(5, java.sql.Types.INTEGER);
+            p.setString(6, t.getGender());
+            p.setInt(7,t.getId());
+            p.executeUpdate();
         }
     }
 

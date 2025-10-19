@@ -1,12 +1,11 @@
 package com.Hogwarts.DBConnection;
-
 import java.sql.*;
 
 
 public class DBConnection {
     private static final String URL = "jdbc:mysql://localhost/Hogwarts";
-    private static final String USER = "root"; // change if needed
-    private static final String PASS = ""; // change if needed
+    private static final String USER = "hogwarts_Records";
+    private static final String PASS = "Harry@123";
 
 
     static {

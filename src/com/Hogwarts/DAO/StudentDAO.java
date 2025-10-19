@@ -23,7 +23,8 @@ public class StudentDAO {
                     rs.getString("term_exam"),
                     rs.getString("father_name"),
                     rs.getString("father_number"),
-                    rs.getString("dob")
+                    rs.getString("dob"),
+                    rs.getString("gender")
                 ));
         }
         return list;
@@ -49,7 +50,8 @@ public class StudentDAO {
                         rs.getString("term_exam"),
                         rs.getString("father_name"),
                         rs.getString("father_number"),
-                        rs.getString("dob")
+                        rs.getString("dob"),
+                        rs.getString("gender")
                     ));
             }
         }
@@ -58,7 +60,7 @@ public class StudentDAO {
 
 
     public int add(Student s) throws SQLException{
-        String sql = "INSERT INTO students (admission_number, name, age, class_no, address, first_internal, second_internal, term_exam, father_name, father_number, dob) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+        String sql = "INSERT INTO students (admission_number, name, age, class_no, address, first_internal, second_internal, term_exam, father_name, father_number, dob, gender) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
         try (Connection c=DBConnection.getConnection(); PreparedStatement p=c.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)){
             p.setString(1,s.getAdmissionNumber());
             p.setString(2,s.getName());
@@ -71,6 +73,7 @@ public class StudentDAO {
             p.setString(9,s.getFatherName());
             p.setString(10,s.getFatherNumber());
             p.setString(11,s.getDob());
+            p.setString(12,s.getGender());
             p.executeUpdate();
             try(ResultSet rs=p.getGeneratedKeys()){ if (rs.next()) return rs.getInt(1); }
         }
@@ -79,7 +82,7 @@ public class StudentDAO {
 
 
     public void update(Student s) throws SQLException{
-        String sql = "UPDATE students SET admission_number=?, name=?, age=?, class_no=?, address=?, first_internal=?, second_internal=?, term_exam=?, father_name=?, father_number=?, dob=? WHERE id=?";
+        String sql = "UPDATE students SET admission_number=?, name=?, age=?, class_no=?, address=?, first_internal=?, second_internal=?, term_exam=?, father_name=?, father_number=?, dob=?, gender=? WHERE id=?";
         try (Connection c=DBConnection.getConnection(); PreparedStatement p=c.prepareStatement(sql)){
             p.setString(1,s.getAdmissionNumber());
             p.setString(2,s.getName());
@@ -92,7 +95,8 @@ public class StudentDAO {
             p.setString(9,s.getFatherName());
             p.setString(10,s.getFatherNumber());
             p.setString(11,s.getDob());
-            p.setInt(12,s.getId());
+            p.setString(12,s.getGender());
+            p.setInt(13,s.getId());
             int affected = p.executeUpdate();
             if (affected == 0) {
                 System.err.println("[DEBUG] StudentDAO.update: No rows updated for student id=" + s.getId());

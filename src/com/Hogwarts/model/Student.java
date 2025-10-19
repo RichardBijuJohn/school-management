@@ -13,6 +13,7 @@ public class Student {
     private String fatherName;
     private String fatherNumber;
     private String dob;
+    private String gender;
     // Add marks field for compatibility (can be empty or used for legacy)
     private String marks;
 
@@ -20,7 +21,7 @@ public class Student {
 
     public Student(int id, String admissionNumber, String name, int age, int classNo, String address,
                    String firstInternal, String secondInternal, String termExam,
-                   String fatherName, String fatherNumber, String dob) {
+                   String fatherName, String fatherNumber, String dob, String gender) {
         this.id = id;
         this.admissionNumber = admissionNumber;
         this.name = name;
@@ -33,13 +34,14 @@ public class Student {
         this.fatherName = fatherName;
         this.fatherNumber = fatherNumber;
         this.dob = dob;
+        this.gender = gender;
         this.marks = ""; // default empty
     }
 
     public Student(String admissionNumber, String name, int age, int classNo, String address,
                    String firstInternal, String secondInternal, String termExam,
-                   String fatherName, String fatherNumber, String dob) {
-        this(0, admissionNumber, name, age, classNo, address, firstInternal, secondInternal, termExam, fatherName, fatherNumber, dob);
+                   String fatherName, String fatherNumber, String dob, String gender) {
+        this(0, admissionNumber, name, age, classNo, address, firstInternal, secondInternal, termExam, fatherName, fatherNumber, dob, gender);
     }
 
     public int getId(){return id;}
@@ -55,6 +57,7 @@ public class Student {
     public String getSecondInternal() { return secondInternal; }
     public String getTermExam() { return termExam; }
     public String getMarks() { return marks; }
+    public String getGender() { return gender; }
 
     public void setId(int id){this.id=id;}
     public void setAdmissionNumber(String s){this.admissionNumber=s;}
@@ -69,4 +72,5 @@ public class Student {
     public void setSecondInternal(String s) { this.secondInternal = s; }
     public void setTermExam(String s) { this.termExam = s; }
     public void setMarks(String m) { this.marks = m; }
+    public void setGender(String gender) { this.gender = gender; }
 }
