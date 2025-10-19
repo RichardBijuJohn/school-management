@@ -5,14 +5,10 @@ import com.Hogwarts.model.*;
 import com.Hogwarts.ui.ClassUI;
 import com.Hogwarts.ui.StudentUI;
 import com.Hogwarts.ui.TeacherUI;
-
 import java.awt.*;
 import java.sql.SQLException;
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
-
-
-
 public class Main {
     private JFrame frame;
     private final UserDAO userDAO = new UserDAO();
