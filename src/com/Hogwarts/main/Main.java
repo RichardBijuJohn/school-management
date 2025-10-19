@@ -2,9 +2,12 @@ package com.Hogwarts.main;
 
 import com.Hogwarts.DAO.*;
 import com.Hogwarts.model.*;
+import com.Hogwarts.ui.ClassUI;
+import com.Hogwarts.ui.StudentUI;
+import com.Hogwarts.ui.TeacherUI;
+
 import java.awt.*;
 import java.sql.SQLException;
-import java.util.List;
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
 
@@ -165,273 +168,17 @@ public class Main {
 
 
         // --- Students Tab ---
-        JPanel studentPanel = new JPanel(new BorderLayout());
-
-        // Use BoxLayout for vertical stacking
-        JPanel studentTopPanel = new JPanel();
-        studentTopPanel.setLayout(new BoxLayout(studentTopPanel, BoxLayout.Y_AXIS));
-        studentTopPanel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
-
-        JPanel studentSearchPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
-        JTextField studentSearchField = new JTextField(20);
-        JButton studentSearchBtn = new JButton("Search");
-        JButton studentBackBtn = new JButton("Logout");
-        studentSearchPanel.add(new JLabel("Search Student by ID/Name:"));
-        studentSearchPanel.add(studentSearchField);
-        studentSearchPanel.add(studentSearchBtn);
-        studentSearchPanel.add(studentBackBtn);
-
-        studentTopPanel.add(studentSearchPanel);
-
-        JPanel studentCtrl = new JPanel(new FlowLayout(FlowLayout.LEFT));
-        JButton addStudent = new JButton("Add Student");
-        studentCtrl.add(addStudent);
-        studentTopPanel.add(studentCtrl);
-
-        studentPanel.add(studentTopPanel, BorderLayout.NORTH);
-
-        // Update table model
-        DefaultTableModel studentModel = new DefaultTableModel(
-            new String[]{"ID","Admission_Number", "Name", "Class", "Age", "Gender"}, 0
-        ) {
-            public boolean isCellEditable(int r, int c) { return false; }
-        };
-        JTable studentTable = new JTable(studentModel);
-        studentTable.setRowHeight(28);
-        studentTable.getTableHeader().setFont(new Font("SansSerif", Font.BOLD, 14));
-        JScrollPane studentScroll = new JScrollPane(studentTable);
-        studentPanel.add(studentScroll, BorderLayout.CENTER);
-
-        Runnable refreshStudents = () -> {
-            try {
-                studentModel.setRowCount(0);
-                for (Student s : studentDAO.getAll())
-                    studentModel.addRow(new Object[]{
-                        s.getId(),
-                        s.getAdmissionNumber(),
-                        s.getName(),
-                        s.getClassNo(),
-                        s.getAge(),
-                        s.getGender()
-                    });
-            } catch (SQLException ex) { showErr(ex); }
-        };
-        refreshStudents.run();
-
-        studentSearchBtn.addActionListener(e -> {
-            String query = studentSearchField.getText().trim().toLowerCase();
-            try {
-                studentModel.setRowCount(0);
-                int count = 0;
-                for (Student s : studentDAO.getAll()) {
-                    if (query.isEmpty() ||
-                            String.valueOf(s.getId()).equalsIgnoreCase(query) ||
-                            s.getName().toLowerCase().contains(query) ||
-                            s.getAdmissionNumber().toLowerCase().contains(query)) {
-                        studentModel.addRow(new Object[]{
-                                s.getId(),
-                                s.getAdmissionNumber(),
-                                s.getName(),
-                                s.getClassNo(),
-                                s.getAge()
-                        });
-                        count++;
-                    }
-                }
-                // If no records found, show message
-                if (count == 0) {
-                    JOptionPane.showMessageDialog(
-                            studentPanel,
-                            "No record found!",
-                            "Search Result",
-                            JOptionPane.INFORMATION_MESSAGE
-                    );
-                    studentSearchField.setText("");
-                }
-            } catch (SQLException ex) {
-                showErr(ex);
-            }
-        });
-
-        studentBackBtn.addActionListener(e -> {
-            f.dispose();
-            showLogin();
-        });
-
-        addStudent.addActionListener(e -> {
-            StudentForm form = new StudentForm(null);
-            int res = JOptionPane.showConfirmDialog(null, form.getPanel(), "Add Student", JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE);
-            if (res == JOptionPane.OK_OPTION) {
-                try {
-                    String username = form.getUsername();
-                    String password = form.getPassword();
-                    Student s = form.toStudent();
-                    int sid = studentDAO.add(s);
-                    // Only create user if both username and password are provided
-                    if (!username.isEmpty() && !password.isEmpty()) {
-                        if (userDAO.findByUsername(username) != null) {
-                            JOptionPane.showMessageDialog(null, "Username already exists. Please choose another.");
-                            return;
-                        }
-                        userDAO.createUser(username, password, "STUDENT", sid);
-                    }
-                    refreshStudents.run();
-                } catch (SQLException ex) { showErr(ex); }
-            }
-        });
-
-        studentTable.addMouseListener(new java.awt.event.MouseAdapter() {
-            public void mouseClicked(java.awt.event.MouseEvent evt) {
-                if (evt.getClickCount() == 1 && studentTable.getSelectedRow() != -1) {
-                    int row = studentTable.getSelectedRow();
-                    int id = Integer.parseInt(studentModel.getValueAt(row, 0).toString());
-                    try {
-                        Student s = null;
-                        for (Student st : studentDAO.getAll()) if (st.getId() == id) s = st;
-                        if (s == null) return;
-                        showStudentProfileDialog(s, refreshStudents);
-                    } catch (SQLException ex) { showErr(ex); }
-                }
-            }
-        });
-
+        StudentUI studentUI = new StudentUI(studentDAO, userDAO);
+        JPanel studentPanel = studentUI.getPanel();
+ 
         // --- Teachers Tab ---
-        JPanel teacherPanel = new JPanel(new BorderLayout());
-
-        JPanel teacherTopPanel = new JPanel();
-        teacherTopPanel.setLayout(new BoxLayout(teacherTopPanel, BoxLayout.Y_AXIS));
-        teacherTopPanel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
-
-        JPanel teacherSearchPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
-        JTextField teacherSearchField = new JTextField(20);
-        JButton teacherSearchBtn = new JButton("Search");
-        teacherSearchPanel.add(new JLabel("Search Teacher by ID/Name:"));
-        teacherSearchPanel.add(teacherSearchField);
-        teacherSearchPanel.add(teacherSearchBtn);
-
-        teacherTopPanel.add(teacherSearchPanel);
-
-        JPanel teacherCtrl = new JPanel(new FlowLayout(FlowLayout.LEFT));
-        JButton addTeacher = new JButton("Add Teacher");
-        JButton editTeacher = new JButton("Update Teacher");
-        JButton delTeacher = new JButton("Delete Teacher");
-        teacherCtrl.add(addTeacher); teacherCtrl.add(editTeacher); teacherCtrl.add(delTeacher);
-        teacherTopPanel.add(teacherCtrl);
-
-        teacherPanel.add(teacherTopPanel, BorderLayout.NORTH);
-
-        // Update table model to include Gender and Phone columns
-        DefaultTableModel teacherModel = new DefaultTableModel(
-            new String[]{"ID", "Name", "Subject", "Qualification", "Class Assigned", "Gender", "Phone"}, 0
-        ) {
-            public boolean isCellEditable(int r, int c) { return false; }
-        };
-        JTable teacherTable = new JTable(teacherModel);
-        teacherTable.setRowHeight(28);
-        teacherTable.getTableHeader().setFont(new Font("SansSerif", Font.BOLD, 14));
-        JScrollPane teacherScroll = new JScrollPane(teacherTable);
-        teacherPanel.add(teacherScroll, BorderLayout.CENTER);
-
-        Runnable refreshTeachers = () -> {
-            try {
-                teacherModel.setRowCount(0);
-                for (Teacher t : teacherDAO.getAll())
-                    teacherModel.addRow(new Object[]{
-                        t.getId(),
-                        t.getName(),
-                        t.getSubject(),
-                        t.getQualification(),
-                        t.getClassAssigned(),
-                        t.getGender(),
-                        t.getPhone_number() 
-                    });
-            } catch (SQLException ex) { showErr(ex); }
-        };
-        refreshTeachers.run();
-
-        teacherSearchBtn.addActionListener(e -> {
-            String query = teacherSearchField.getText().trim().toLowerCase();
-            int matchingRecordsCount = 0;
-            try{
-                teacherModel.setRowCount(0);
-                for (Teacher t : teacherDAO.getAll()) {
-                    if (query.isEmpty() ||
-                            String.valueOf(t.getId()).equalsIgnoreCase(query) ||
-                            t.getName().toLowerCase().contains(query)) {
-                        teacherModel.addRow(new Object[]{t.getId(), t.getName(), t.getSubject(), t.getQualification(), t.getClassAssigned()});
-                        matchingRecordsCount++;
-                    }
-                }
-                if (matchingRecordsCount == 0) {
-                    teacherModel.addRow(new Object[]{ "No records found"});
-                    teacherSearchField.setText("");
-                }
-            } catch (SQLException ex) {
-                showErr(ex);
-            }});
-        addTeacher.addActionListener(e -> {
-            TeacherForm form = new TeacherForm(null);
-            int res = JOptionPane.showConfirmDialog(null, form.getPanel(), "Add Teacher", JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE);
-            if (res == JOptionPane.OK_OPTION) {
-                try {
-                    String username = form.getUsername();
-                    String password = form.getPassword();
-                    Teacher t = form.toTeacher();
-                    int tid = teacherDAO.add(t);
-                    // Only create user if both username and password are provided
-                    if (!username.isEmpty() && !password.isEmpty()) {
-                        if (userDAO.findByUsername(username) != null) {
-                            JOptionPane.showMessageDialog(null, "Username already exists. Please choose another.");
-                            return;
-                        }
-                        userDAO.createUser(username, password, "TEACHER", tid);
-                    }
-                    refreshTeachers.run();
-                } catch (SQLException ex) { showErr(ex); }
-            }
-        });
-
-        editTeacher.addActionListener(e -> {
-            int r = teacherTable.getSelectedRow();
-            if (r == -1) { JOptionPane.showMessageDialog(null, "Select a teacher"); return; }
-            try {
-                int id = Integer.parseInt(teacherModel.getValueAt(r, 0).toString());
-                Teacher t = null;
-                for (Teacher tt : teacherDAO.getAll()) if (tt.getId() == id) t = tt;
-                TeacherForm form = new TeacherForm(t);
-                int res = JOptionPane.showConfirmDialog(null, form.getPanel(), "Update Teacher", JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE);
-                if (res == JOptionPane.OK_OPTION) {
-                    Teacher nt = form.toTeacher();
-                    nt.setId(id);
-                    teacherDAO.update(nt);
-                    refreshTeachers.run();
-                    JOptionPane.showMessageDialog(null, "Updated successfully.");
-                }
-            } catch (SQLException ex) { showErr(ex); }
-        });
-
-        delTeacher.addActionListener(e -> {
-            int r = teacherTable.getSelectedRow();
-            if (r == -1) { JOptionPane.showMessageDialog(null, "Select a teacher"); return; }
-            int confirm = JOptionPane.showConfirmDialog(
-                null,
-                "Are you sure you want to delete this teacher?",
-                "Confirm Delete",
-                JOptionPane.YES_NO_OPTION
-            );
-            if (confirm == JOptionPane.YES_OPTION) {
-                try {
-                    int id = Integer.parseInt(teacherModel.getValueAt(r, 0).toString());
-                    teacherDAO.delete(id);
-                    refreshTeachers.run();
-                    JOptionPane.showMessageDialog(null, "Record deleted.");
-                } catch (SQLException ex) { showErr(ex); }
-            }
-        });
-
+        TeacherUI teacherUI = new TeacherUI(teacherDAO, userDAO);
+        JPanel teacherPanel = teacherUI.getPanel();
+ 
         // --- Classes Tab ---
-        JPanel classPanel = adminClassesPanel();
-
+        ClassUI classUI = new ClassUI(studentDAO, teacherDAO);
+        JPanel classPanel = classUI.getPanel();
+ 
         tabs.addTab("Home", homePanel);
         tabs.addTab("Students", studentPanel);
         tabs.addTab("Teachers", teacherPanel);
@@ -442,111 +189,6 @@ public class Main {
         f.setVisible(true);
     }
 
-
-    private JPanel adminClassesPanel(){
-        JPanel p = new JPanel(new BorderLayout());
-
-        DefaultTableModel model = new DefaultTableModel(new String[]{"Class","No. of Students","Class Teacher"},0){
-            public boolean isCellEditable(int r,int c){return false;}
-        };
-        JTable table = new JTable(model);
-        p.add(new JScrollPane(table), BorderLayout.CENTER);
-
-        JPanel bottomPanel = new JPanel(new BorderLayout());
-        JButton refreshBtn = new JButton("Refresh");
-        JButton addClassBtn = new JButton("Add Class");
-        JPanel btnPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
-        btnPanel.add(addClassBtn);
-        btnPanel.add(refreshBtn);
-        bottomPanel.add(btnPanel, BorderLayout.EAST);
-        p.add(bottomPanel, BorderLayout.SOUTH);
-
-        Runnable refresh = () -> {
-            try {
-                model.setRowCount(0);
-                for (int cls = 1; cls <= 10; cls++){
-                    int count = studentDAO.countByClass(cls);
-                    String classTeacherName = teacherDAO.getNameByClass(cls);
-                    if (classTeacherName == null || classTeacherName.trim().isEmpty()) {
-                        classTeacherName = "Unassigned";
-                    }
-                    model.addRow(new Object[]{cls, count, classTeacherName});
-                }
-            } catch(SQLException ex){
-                showErr(ex);
-            }
-        };
-
-        refresh.run();
-        refreshBtn.addActionListener(e -> refresh.run());
-
-        // Show students in class on row click
-        table.addMouseListener(new java.awt.event.MouseAdapter() {
-            public void mouseClicked(java.awt.event.MouseEvent evt) {
-                if (evt.getClickCount() == 1 && table.getSelectedRow() != -1) {
-                    int row = table.getSelectedRow();
-                    int classNo = Integer.parseInt(model.getValueAt(row, 0).toString());
-                    try {
-                        List<Student> students = studentDAO.getByClass(classNo);
-                        if (students.isEmpty()) {
-                            JOptionPane.showMessageDialog(p, "No students found in this class.", "Class Students", JOptionPane.INFORMATION_MESSAGE);
-                            return;
-                        }
-                        JDialog dialog = new JDialog((Frame) null, "Students in Class " + classNo, true);
-                        DefaultTableModel studentModel = new DefaultTableModel(
-                            new String[]{"ID", "Admission Number", "Name", "Age", "Address"}, 0
-                        ) {
-                            public boolean isCellEditable(int r, int c) { return false; }
-                        };
-                        for (Student s : students) {
-                            studentModel.addRow(new Object[]{
-                                s.getId(),
-                                s.getAdmissionNumber(),
-                                s.getName(),
-                                s.getAge(),
-                                s.getAddress()
-                            });
-                        }
-                        JTable studentTable = new JTable(studentModel);
-                        studentTable.setRowHeight(24);
-                        studentTable.getTableHeader().setFont(new Font("SansSerif", Font.BOLD, 13));
-                        JScrollPane scroll = new JScrollPane(studentTable);
-
-                        dialog.getContentPane().add(scroll, BorderLayout.CENTER);
-                        dialog.setSize(600, 400);
-                        dialog.setLocationRelativeTo(null);
-                        dialog.setVisible(true);
-                    } catch (SQLException ex) {
-                        showErr(ex);
-                    }
-                }
-            }
-        });
-
-        // Add class logic (simple example: prompt for class number and teacher name)
-        addClassBtn.addActionListener(e -> {
-            JPanel form = new JPanel(new GridLayout(2,2,5,5));
-            JTextField classNoField = new JTextField();
-            JTextField teacherNameField = new JTextField();
-            form.add(new JLabel("Grade:")); form.add(classNoField);
-            form.add(new JLabel("Class Teacher Name:")); form.add(teacherNameField);
-            int res = JOptionPane.showConfirmDialog(p, form, "Add Class", JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE);
-            if (res == JOptionPane.OK_OPTION) {
-                try {
-                    int classNo = Integer.parseInt(classNoField.getText().trim());
-                    String teacherName = teacherNameField.getText().trim();
-                    // You may need to implement addClass in your DAO, here is a simple placeholder:
-                    teacherDAO.assignTeacherToClass(teacherName, classNo); 
-                    refresh.run();
-                    JOptionPane.showMessageDialog(p, "Class added/updated successfully.");
-                } catch (Exception ex) {
-                    showErr(ex);
-                }
-            }
-        });
-
-        return p;
-    }
     // ----------------- Teacher Panel -----------------
     private void showTeacherPanel(User user){
         JFrame f = new JFrame("Teacher Panel");
@@ -601,7 +243,7 @@ public class Main {
                     JOptionPane.showMessageDialog(null,"No class assigned.");
                     return;
                 }
-                List<Student> list = studentDAO.getByClass(teacher.getClassAssigned());
+                java.util.List<Student> list = studentDAO.getByClass(teacher.getClassAssigned());
                 for (Student s: list)
                     model.addRow(new Object[]{s.getId(), s.getName(), s.getAge(), s.getClassNo()});
             } catch(SQLException ex){ showErr(ex); }
@@ -613,7 +255,7 @@ public class Main {
             String query = searchField.getText().trim().toLowerCase();
             try {
                 model.setRowCount(0);
-                List<Student> list = studentDAO.getByClass(teacher.getClassAssigned());
+                java.util.List<Student> list = studentDAO.getByClass(teacher.getClassAssigned());
                 for (Student s : list) {
                     if (query.isEmpty() ||
                         String.valueOf(s.getId()).equalsIgnoreCase(query) ||
@@ -1059,44 +701,5 @@ class StudentForm {
         });
 
         dialog.setVisible(true);
-    }
-
-    // Helper to parse marks string into a map: exam -> subject -> mark
-    private java.util.Map<String, java.util.Map<String, String>> parseMarks(String marksStr) {
-        java.util.Map<String, java.util.Map<String, String>> examMap = new java.util.HashMap<>();
-        if (marksStr == null || marksStr.trim().isEmpty()) return examMap;
-        // Example: "First Internal: Math:80, English:90, ...; Term Exam: Math:85, English:88, ..."
-        String[] exams = marksStr.split(";");
-        for (String examEntry : exams) {
-            examEntry = examEntry.trim();
-            if (examEntry.isEmpty()) continue;
-            int idx = examEntry.indexOf(":");
-            if (idx == -1) continue;
-            String examName = examEntry.substring(0, idx).trim();
-            String subjectsStr = examEntry.substring(idx + 1).trim();
-            java.util.Map<String, String> subjectMap = new java.util.HashMap<>();
-            for (String subjMark : subjectsStr.split(",")) {
-                String[] pair = subjMark.split(":");
-                if (pair.length == 2) subjectMap.put(pair[0].trim(), pair[1].trim());
-            }
-            examMap.put(examName, subjectMap);
-        }
-        return examMap;
-    }
-
-    // Helper to serialize marks map back to string
-    private String serializeMarks(java.util.Map<String, java.util.Map<String, String>> examMap) {
-        StringBuilder sb = new StringBuilder();
-        for (String exam : examMap.keySet()) {
-            sb.append(exam).append(": ");
-            java.util.Map<String, String> subjectMap = examMap.get(exam);
-            int i = 0;
-            for (String subj : subjectMap.keySet()) {
-                sb.append(subj).append(":").append(subjectMap.get(subj));
-                if (++i < subjectMap.size()) sb.append(", ");
-            }
-            sb.append("; ");
-        }
-        return sb.toString().trim();
     }
 }
