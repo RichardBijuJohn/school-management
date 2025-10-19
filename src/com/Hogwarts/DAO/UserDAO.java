@@ -5,6 +5,7 @@ import java.sql.*;
 
 
 public class UserDAO {
+    // Fix: Correct method signature for finding by username and password
     public User findByUsernameAndPassword(String username, String password) throws SQLException {
         String sql = "SELECT * FROM users WHERE username=? AND password=?";
         try (Connection c = DBConnection.getConnection(); PreparedStatement p = c.prepareStatement(sql)){
@@ -32,7 +33,7 @@ public class UserDAO {
             p.setString(2, password); 
             p.setString(3, role);
             if (refId==null) p.setNull(4, Types.INTEGER); 
-            else p.setInt(5, refId);
+            else p.setInt(4, refId); // Fix: should be parameter index 4, not 5
             p.executeUpdate();
             return true;
         } catch (SQLIntegrityConstraintViolationException ex) {

@@ -265,18 +265,16 @@ public class Main {
                 try {
                     String username = form.getUsername();
                     String password = form.getPassword();
-                    if (username.isEmpty() || password.isEmpty()) {
-                        JOptionPane.showMessageDialog(null, "Username and password are required for student login.");
-                        return;
-                    }
-                    // Check if username already exists
-                    if (userDAO.findByUsername(username) != null) {
-                        JOptionPane.showMessageDialog(null, "Username already exists. Please choose another.");
-                        return;
-                    }
                     Student s = form.toStudent();
                     int sid = studentDAO.add(s);
-                    userDAO.createUser(username, password, "STUDENT", sid);
+                    // Only create user if both username and password are provided
+                    if (!username.isEmpty() && !password.isEmpty()) {
+                        if (userDAO.findByUsername(username) != null) {
+                            JOptionPane.showMessageDialog(null, "Username already exists. Please choose another.");
+                            return;
+                        }
+                        userDAO.createUser(username, password, "STUDENT", sid);
+                    }
                     refreshStudents.run();
                 } catch (SQLException ex) { showErr(ex); }
             }
@@ -378,18 +376,16 @@ public class Main {
                 try {
                     String username = form.getUsername();
                     String password = form.getPassword();
-                    if (username.isEmpty() || password.isEmpty()) {
-                        JOptionPane.showMessageDialog(null, "Username and password are required for teacher login.");
-                        return;
-                    }
-                    
-                    if (userDAO.findByUsername(username) != null) {
-                        JOptionPane.showMessageDialog(null, "Username already exists. Please choose another.");
-                        return;
-                    }
                     Teacher t = form.toTeacher();
                     int tid = teacherDAO.add(t);
-                    userDAO.createUser(username, password, "TEACHER", tid);
+                    // Only create user if both username and password are provided
+                    if (!username.isEmpty() && !password.isEmpty()) {
+                        if (userDAO.findByUsername(username) != null) {
+                            JOptionPane.showMessageDialog(null, "Username already exists. Please choose another.");
+                            return;
+                        }
+                        userDAO.createUser(username, password, "TEACHER", tid);
+                    }
                     refreshTeachers.run();
                 } catch (SQLException ex) { showErr(ex); }
             }
@@ -419,7 +415,7 @@ public class Main {
             if (r == -1) { JOptionPane.showMessageDialog(null, "Select a teacher"); return; }
             int confirm = JOptionPane.showConfirmDialog(
                 null,
-                "Do you want to delete the records?",
+                "Are you sure you want to delete this teacher?",
                 "Confirm Delete",
                 JOptionPane.YES_NO_OPTION
             );
@@ -431,7 +427,6 @@ public class Main {
                     JOptionPane.showMessageDialog(null, "Record deleted.");
                 } catch (SQLException ex) { showErr(ex); }
             }
-            // If NO, do nothing
         });
 
         // --- Classes Tab ---
@@ -1049,7 +1044,7 @@ class StudentForm {
         deleteBtn.addActionListener(e -> {
             int confirm = JOptionPane.showConfirmDialog(
                 dialog,
-                "Do you want to delete the records?",
+                "Are you sure you want to delete this student?",
                 "Confirm Delete",
                 JOptionPane.YES_NO_OPTION
             );
@@ -1061,7 +1056,6 @@ class StudentForm {
                     dialog.dispose();
                 } catch (SQLException ex) { showErr(ex); }
             }
-            // If NO, do nothing
         });
 
         dialog.setVisible(true);
