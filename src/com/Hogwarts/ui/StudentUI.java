@@ -19,22 +19,26 @@ public class StudentUI {
 
     public JPanel getPanel() {
         JPanel studentPanel = new JPanel(new BorderLayout());
+        studentPanel.setBackground(new Color(245, 245, 220)); // beige
 
         JPanel studentTopPanel = new JPanel();
         studentTopPanel.setLayout(new BoxLayout(studentTopPanel, BoxLayout.Y_AXIS));
         studentTopPanel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
+        studentTopPanel.setBackground(new Color(245, 245, 220)); // beige
 
         JPanel studentSearchPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
+        studentSearchPanel.setBackground(new Color(245, 245, 220)); // beige
         JTextField studentSearchField = new JTextField(20);
         JButton studentSearchBtn = new JButton("Search");
-        JButton studentBackBtn = new JButton("Logout");
-        studentSearchPanel.add(new JLabel("Search Student by ID/Name:"));
+
+        studentSearchPanel.add(new JLabel("Search Student by Adm_No/Name:"));
         studentSearchPanel.add(studentSearchField);
         studentSearchPanel.add(studentSearchBtn);
-        studentSearchPanel.add(studentBackBtn);
+
         studentTopPanel.add(studentSearchPanel);
 
         JPanel studentCtrl = new JPanel(new FlowLayout(FlowLayout.LEFT));
+        studentCtrl.setBackground(new Color(245, 245, 220)); // beige
         JButton addStudent = new JButton("Add Student");
         studentCtrl.add(addStudent);
         studentTopPanel.add(studentCtrl);
@@ -42,11 +46,12 @@ public class StudentUI {
         studentPanel.add(studentTopPanel, BorderLayout.NORTH);
 
         DefaultTableModel studentModel = new DefaultTableModel(
-                new String[]{"ID","Admission_Number", "Name", "Class", "Age"}, 0
+                new String[]{"ID","Admission_Number", "Name","Gender", "Age","Class"}, 0
         ) {
             public boolean isCellEditable(int r, int c) { return false; }
         };
         JTable studentTable = new JTable(studentModel);
+        studentTable.setBackground(new Color(245, 245, 220)); // beige
         studentTable.setRowHeight(28);
         JScrollPane studentScroll = new JScrollPane(studentTable);
         studentPanel.add(studentScroll, BorderLayout.CENTER);
@@ -59,8 +64,10 @@ public class StudentUI {
                         s.getId(),
                         s.getAdmissionNumber(),
                         s.getName(),
-                        s.getClassNo(),
-                        s.getAge()
+                        s.getGender(),
+                            s.getAge(),
+                        s.getClassNo()
+
                     });
             } catch (SQLException ex) { showErr(ex); }
         };
@@ -80,6 +87,7 @@ public class StudentUI {
                                 s.getId(),
                                 s.getAdmissionNumber(),
                                 s.getName(),
+                                s.getGender(),
                                 s.getClassNo(),
                                 s.getAge()
                         });
@@ -93,32 +101,35 @@ public class StudentUI {
             } catch (SQLException ex) { showErr(ex); }
         });
 
-        studentBackBtn.addActionListener(e -> {
-            // Close admin frame — caller (Main) handles frame lifecycle
-            Window w = SwingUtilities.getWindowAncestor(studentPanel);
-            if (w != null) w.dispose();
-        });
+
 
         addStudent.addActionListener(e -> {
-            StudentForm form = new StudentForm(null);
-            int res = JOptionPane.showConfirmDialog(null, form.getPanel(), "Add Student", JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE);
-            if (res == JOptionPane.OK_OPTION) {
-                try {
-                    String username = form.getUsername();
-                    String password = form.getPassword();
-                    Student s = form.toStudent();
-                    int sid = studentDAO.add(s);
-                    if (!username.isEmpty() && !password.isEmpty()) {
-                        if (userDAO.findByUsername(username) != null) {
-                            JOptionPane.showMessageDialog(null, "Username already exists. Please choose another.");
-                            return;
-                        }
-                        userDAO.createUser(username, password, "STUDENT", sid);
-                    }
-                    refreshStudents.run();
-                } catch (SQLException ex) { showErr(ex); }
+    StudentForm form = new StudentForm(null);
+    int res = JOptionPane.showConfirmDialog(null, form.getPanel(), "Add Student", JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE);
+    if (res == JOptionPane.OK_OPTION) {
+        try {
+            String username = form.getUsername();
+            String password = form.getPassword();
+            Student s = form.toStudent();
+            int sid = studentDAO.add(s);
+            JOptionPane.showMessageDialog(null, "Student added successfully.");
+            // Ensure user is created after student is added
+            if (!username.isEmpty() && !password.isEmpty()) {
+                if (userDAO.findByUsername(username) != null) {
+                    JOptionPane.showMessageDialog(null, "Username already exists. Please choose another.");
+                    return;
+                }
+                boolean created = userDAO.createUser(username, password, "STUDENT", sid);
+                if (!created) {
+                    JOptionPane.showMessageDialog(null, "Failed to create login for student.");
+                } else {
+                    JOptionPane.showMessageDialog(null, "Student login created successfully.");
+                }
             }
-        });
+            refreshStudents.run();
+        } catch (SQLException ex) { showErr(ex); }
+    }
+});
 
         studentTable.addMouseListener(new java.awt.event.MouseAdapter() {
             public void mouseClicked(java.awt.event.MouseEvent evt) {

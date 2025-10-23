@@ -9,7 +9,9 @@ public class StudentDAO {
     public List<Student> getAll() throws SQLException{
         List<Student> list = new ArrayList<>();
         String sql = "SELECT * FROM students";
-        try (Connection c=DBConnection.getConnection(); PreparedStatement p=c.prepareStatement(sql); ResultSet rs=p.executeQuery()){
+        try (Connection c=DBConnection.getConnection();
+             PreparedStatement p=c.prepareStatement(sql);
+             ResultSet rs=p.executeQuery()){
             while (rs.next())
                 list.add(new Student(
                     rs.getInt("id"),
@@ -117,13 +119,22 @@ public class StudentDAO {
 
     public void delete(int id) throws SQLException{
         String sql = "DELETE FROM students WHERE id=?";
-        try (Connection c=DBConnection.getConnection(); PreparedStatement p=c.prepareStatement(sql)){ p.setInt(1,id); p.executeUpdate(); }
+        try (Connection c=DBConnection.getConnection();
+             PreparedStatement p=c.prepareStatement(sql)){
+            p.setInt(1,id);
+            p.executeUpdate(); }
     }
 
 
     public int countByClass(int classNo) throws SQLException{
         String sql = "SELECT COUNT(*) FROM students WHERE class_no=?";
-        try (Connection c=DBConnection.getConnection(); PreparedStatement p=c.prepareStatement(sql)){ p.setInt(1,classNo); try(ResultSet rs=p.executeQuery()){ if (rs.next()) return rs.getInt(1); }}
+        try (Connection c=DBConnection.getConnection(); 
+        PreparedStatement p=c.prepareStatement(sql))
+        { p.setInt(1,classNo); 
+            try(ResultSet rs=p.executeQuery())
+            { 
+                if (rs.next())
+                 return rs.getInt(1); }}
         return 0;
     }
 }

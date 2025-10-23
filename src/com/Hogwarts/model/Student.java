@@ -17,7 +17,7 @@ public class Student {
     // Add marks field for compatibility (can be empty or used for legacy)
     private String marks;
 
-    public Student() {}
+
 
     public Student(int id, String admissionNumber, String name, int age, int classNo, String address,
                    String firstInternal, String secondInternal, String termExam,

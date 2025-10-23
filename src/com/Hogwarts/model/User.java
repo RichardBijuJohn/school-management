@@ -3,7 +3,7 @@ public class User {
     private int id;
     private String username;
     private String password;
-    private String role; // ADMIN, TEACHER, STUDENT
+    private String role;
     private Integer refId;
 
 

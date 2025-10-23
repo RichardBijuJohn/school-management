@@ -9,6 +9,9 @@ import java.awt.*;
 import java.sql.SQLException;
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
+
+
+
 public class Main {
     private JFrame frame;
     private final UserDAO userDAO = new UserDAO();
@@ -27,10 +30,9 @@ public class Main {
         frame.setSize(520, 520);
         frame.setLayout(new BorderLayout());
 
-
         // Top panel for logo and title
         JPanel topPanel = new JPanel(new BorderLayout());
-        topPanel.setBackground(new Color(230, 240, 255));
+        topPanel.setBackground(new Color(245, 245, 220)); // beige
         topPanel.setBorder(BorderFactory.createEmptyBorder(20, 0, 10, 0));
 
 
@@ -57,13 +59,12 @@ public class Main {
 
         frame.add(topPanel, BorderLayout.NORTH);
 
-
         // Main login panel
         JPanel p = new JPanel(new GridBagLayout()) {
             protected void paintComponent(Graphics g) {
                 super.paintComponent(g);
                 Graphics2D g2 = (Graphics2D) g;
-                g2.setColor(new Color(240, 248, 255));
+                g2.setColor(new Color(245, 245, 220)); // beige
                 g2.fillRoundRect(0, 0, getWidth(), getHeight(), 30, 30);
             }
         };
@@ -140,7 +141,7 @@ public class Main {
         // --- Home Tab ---
         JPanel homePanel = new JPanel();
         homePanel.setLayout(new BoxLayout(homePanel, BoxLayout.Y_AXIS));
-        homePanel.setBackground(new Color(240, 248, 255));
+        homePanel.setBackground(new Color(245, 245, 220)); // beige
         homePanel.setBorder(BorderFactory.createEmptyBorder(40, 40, 40, 40));
 
         JLabel welcomeLabel = new JLabel("Hogwarts School Management System", JLabel.CENTER);
@@ -166,21 +167,47 @@ public class Main {
         // --- Students Tab ---
         StudentUI studentUI = new StudentUI(studentDAO, userDAO);
         JPanel studentPanel = studentUI.getPanel();
- 
+        studentPanel.setBackground(new Color(245, 245, 220)); // beige
+
         // --- Teachers Tab ---
         TeacherUI teacherUI = new TeacherUI(teacherDAO, userDAO);
         JPanel teacherPanel = teacherUI.getPanel();
- 
+        teacherPanel.setBackground(new Color(245, 245, 220)); // beige
+
         // --- Classes Tab ---
         ClassUI classUI = new ClassUI(studentDAO, teacherDAO);
         JPanel classPanel = classUI.getPanel();
- 
+        classPanel.setBackground(new Color(245, 245, 220)); // beige
+
         tabs.addTab("Home", homePanel);
         tabs.addTab("Students", studentPanel);
         tabs.addTab("Teachers", teacherPanel);
         tabs.addTab("Classes", classPanel);
 
-        f.add(tabs);
+        // Add logout button to the top right
+        JPanel topPanel = new JPanel(new BorderLayout());
+        topPanel.setBackground(new Color(245, 245, 220));
+        JButton logoutBtn = new JButton("Logout");
+        logoutBtn.setFont(new Font("SansSerif", Font.BOLD, 14));
+        JPanel logoutPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
+        logoutPanel.setBackground(new Color(245, 245, 220));
+        logoutPanel.add(logoutBtn);
+        topPanel.add(logoutPanel, BorderLayout.EAST);
+
+        // Add the tabbed pane below the logout button
+        JPanel mainPanel = new JPanel(new BorderLayout());
+        mainPanel.setBackground(new Color(245, 245, 220));
+        mainPanel.add(topPanel, BorderLayout.NORTH);
+        mainPanel.add(tabs, BorderLayout.CENTER);
+
+        f.setContentPane(mainPanel);
+
+        logoutBtn.addActionListener(e -> {
+            f.dispose(); // Properly dispose the frame
+            // Always create a new Main instance to show login
+            new Main().showLogin();
+        });
+
         f.setLocationRelativeTo(null);
         f.setVisible(true);
     }
@@ -198,7 +225,29 @@ public class Main {
             tabs.addTab("My Class students", teacherStudentsPanel(t, f));
         } catch(SQLException ex){ showErr(ex); }
 
-        f.add(tabs);
+        // Add logout button to the top right
+        JPanel topPanel = new JPanel(new BorderLayout());
+        topPanel.setBackground(new Color(245, 245, 220));
+        JButton logoutBtn = new JButton("Logout");
+        logoutBtn.setFont(new Font("SansSerif", Font.BOLD, 14));
+        JPanel logoutPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
+        logoutPanel.setBackground(new Color(245, 245, 220));
+        logoutPanel.add(logoutBtn);
+        topPanel.add(logoutPanel, BorderLayout.EAST);
+
+        JPanel mainPanel = new JPanel(new BorderLayout());
+        mainPanel.setBackground(new Color(245, 245, 220));
+        mainPanel.add(topPanel, BorderLayout.NORTH);
+        mainPanel.add(tabs, BorderLayout.CENTER);
+
+        f.setContentPane(mainPanel);
+
+        logoutBtn.addActionListener(e -> {
+            f.dispose(); // Properly dispose the frame
+            // Always create a new Main instance to show login
+            new Main().showLogin();
+        });
+
         f.setLocationRelativeTo(null);
         f.setVisible(true);
     }
@@ -207,15 +256,16 @@ public class Main {
     // Enhanced teacherStudentsPanel with search and back button
     private JPanel teacherStudentsPanel(Teacher teacher, JFrame parentFrame){
         JPanel p = new JPanel(new BorderLayout());
+        p.setBackground(new Color(245, 245, 220)); // beige
 
         JPanel searchPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
+        searchPanel.setBackground(new Color(245, 245, 220)); // beige
         JTextField searchField = new JTextField(20);
         JButton searchBtn = new JButton("Search");
-        JButton backBtn = new JButton("Logout");
+        
         searchPanel.add(new JLabel("Search Student by ID/Name:"));
         searchPanel.add(searchField);
         searchPanel.add(searchBtn);
-        searchPanel.add(backBtn);
         p.add(searchPanel, BorderLayout.NORTH);
 
         // Remove "Marks" column
@@ -228,6 +278,7 @@ public class Main {
         p.add(new JScrollPane(table), BorderLayout.CENTER);
 
         JPanel ctrl = new JPanel();
+        ctrl.setBackground(new Color(245, 245, 220)); // beige
         JButton enterMarks = new JButton("Enter/Update Marks");
         ctrl.add(enterMarks);
         p.add(ctrl, BorderLayout.SOUTH);
@@ -262,10 +313,6 @@ public class Main {
             } catch(SQLException ex){ showErr(ex); }
         });
 
-        backBtn.addActionListener(e -> {
-            parentFrame.dispose();
-            showLogin();
-        });
 
         enterMarks.addActionListener(e -> {
     int r = table.getSelectedRow();
@@ -400,9 +447,11 @@ public class Main {
         f.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 
         JPanel p = new JPanel(new BorderLayout());
+        p.setBackground(new Color(245, 245, 220)); // beige
 
-        JButton backBtn = new JButton("Back");
+        JButton backBtn = new JButton("Logout");
         JPanel topPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
+        topPanel.setBackground(new Color(245, 245, 220)); // beige
         topPanel.add(backBtn);
         p.add(topPanel, BorderLayout.NORTH);
 
@@ -417,7 +466,7 @@ public class Main {
         } catch(SQLException ex){ showErr(ex); }
 
         backBtn.addActionListener(e -> {
-            f.dispose();
+            f.setVisible(false);
             showLogin();
         });
 
@@ -699,3 +748,5 @@ class StudentForm {
         dialog.setVisible(true);
     }
 }
+
+

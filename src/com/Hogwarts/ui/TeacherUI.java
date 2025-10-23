@@ -19,11 +19,15 @@ public class TeacherUI {
 
     public JPanel getPanel() {
         JPanel teacherPanel = new JPanel(new BorderLayout());
+        teacherPanel.setBackground(new Color(245, 245, 220)); // beige
+
         JPanel teacherTopPanel = new JPanel();
         teacherTopPanel.setLayout(new BoxLayout(teacherTopPanel, BoxLayout.Y_AXIS));
         teacherTopPanel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
+        teacherTopPanel.setBackground(new Color(245, 245, 220)); // beige
 
         JPanel teacherSearchPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
+        teacherSearchPanel.setBackground(new Color(245, 245, 220)); // beige
         JTextField teacherSearchField = new JTextField(20);
         JButton teacherSearchBtn = new JButton("Search");
         teacherSearchPanel.add(new JLabel("Search Teacher by ID/Name:"));
@@ -32,28 +36,39 @@ public class TeacherUI {
         teacherTopPanel.add(teacherSearchPanel);
 
         JPanel teacherCtrl = new JPanel(new FlowLayout(FlowLayout.LEFT));
+        teacherCtrl.setBackground(new Color(245, 245, 220)); // beige
         JButton addTeacher = new JButton("Add Teacher");
         JButton editTeacher = new JButton("Update Teacher");
         JButton delTeacher = new JButton("Delete Teacher");
+        addTeacher.setFont(new Font("SansSerif", Font.BOLD, 13));
+        editTeacher.setFont(new Font("SansSerif", Font.BOLD, 13));
+        delTeacher.setFont(new Font("SansSerif", Font.BOLD, 13));
         teacherCtrl.add(addTeacher); teacherCtrl.add(editTeacher); teacherCtrl.add(delTeacher);
         teacherTopPanel.add(teacherCtrl);
 
         teacherPanel.add(teacherTopPanel, BorderLayout.NORTH);
 
         DefaultTableModel teacherModel = new DefaultTableModel(
-            new String[]{"ID", "Name", "Subject", "Qualification", "Class Assigned"}, 0
+            new String[]{"ID", "Name","Gender", "Subject", "Qualification", "Class Assigned"}, 0
         ) {
             public boolean isCellEditable(int r, int c) { return false; }
         };
         JTable teacherTable = new JTable(teacherModel);
         teacherTable.setRowHeight(28);
+        teacherTable.setBackground(new Color(245, 245, 220)); // beige
         teacherPanel.add(new JScrollPane(teacherTable), BorderLayout.CENTER);
 
         Runnable refreshTeachers = () -> {
             try {
                 teacherModel.setRowCount(0);
                 for (Teacher t : teacherDAO.getAll())
-                    teacherModel.addRow(new Object[]{t.getId(), t.getName(), t.getSubject(), t.getQualification(), t.getClassAssigned()});
+                    teacherModel.addRow(new Object[]{
+                            t.getId(),
+                            t.getName(),
+                            t.getGender(),
+                            t.getSubject(),
+                            t.getQualification(),
+                            t.getClassAssigned()});
             } catch (SQLException ex) { showErr(ex); }
         };
         refreshTeachers.run();
@@ -67,7 +82,13 @@ public class TeacherUI {
                     if (query.isEmpty() ||
                             String.valueOf(t.getId()).equalsIgnoreCase(query) ||
                             t.getName().toLowerCase().contains(query)) {
-                        teacherModel.addRow(new Object[]{t.getId(), t.getName(), t.getSubject(), t.getQualification(), t.getClassAssigned()});
+                        teacherModel.addRow(new Object[]{
+                                t.getId(),
+                                t.getName(),
+                                t.getGender(),
+                                t.getSubject(),
+                                t.getQualification(),
+                                t.getClassAssigned()});
                         count++;
                     }
                 }
@@ -86,16 +107,32 @@ public class TeacherUI {
                     String username = form.getUsername();
                     String password = form.getPassword();
                     Teacher t = form.toTeacher();
+                    // Set username and password in Teacher object for reference
+                    t.setUsername(username);
+                    t.setPassword(password);
                     int tid = teacherDAO.add(t);
+                    JOptionPane.showMessageDialog(null, "Teacher added successfully.");
+                    // Ensure user is created after teacher is added
                     if (!username.isEmpty() && !password.isEmpty()) {
                         if (userDAO.findByUsername(username) != null) {
                             JOptionPane.showMessageDialog(null, "Username already exists. Please choose another.");
                             return;
                         }
-                        userDAO.createUser(username, password, "TEACHER", tid);
+                        boolean created = userDAO.createUser(t.getUsername(), t.getPassword(), "TEACHER", tid);
+                        if (!created) {
+                            JOptionPane.showMessageDialog(null, "Failed to create login for teacher.");
+                        } else {
+                            JOptionPane.showMessageDialog(null, "Teacher login created successfully.");
+                        }
                     }
                     refreshTeachers.run();
-                } catch (SQLException ex) { showErr(ex); }
+                } catch (SQLException ex) {
+                    showErr(ex);
+                    System.out.println("error:"+ex);
+                }
+                catch(Exception eo){
+                    System.out.println("error:"+eo);
+                }
             }
         });
 
@@ -151,6 +188,7 @@ public class TeacherUI {
 
         public TeacherForm(Teacher t){
             panel = new JPanel(new GridLayout(11,2,5,5));
+            panel.setBackground(new Color(224, 255, 255)); // light cyan
             panel.add(new JLabel("Name:")); panel.add(nameField);
             panel.add(new JLabel("Subject:")); panel.add(subjectField);
             panel.add(new JLabel("Phone Number:")); panel.add(phoneField);
@@ -159,6 +197,7 @@ public class TeacherUI {
             classBox.addItem(null); for(int i=1;i<=10;i++) classBox.addItem(i); panel.add(classBox);
             panel.add(new JLabel("Gender:"));
             JPanel genderPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
+            genderPanel.setBackground(new Color(224, 255, 255)); // light cyan
             genderGroup.add(maleBtn); genderGroup.add(femaleBtn);
             genderPanel.add(maleBtn); genderPanel.add(femaleBtn);
             panel.add(genderPanel);

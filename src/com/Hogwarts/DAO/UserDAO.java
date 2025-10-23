@@ -3,7 +3,6 @@ import com.Hogwarts.DBConnection.DBConnection;
 import com.Hogwarts.model.User;
 import java.sql.*;
 
-
 public class UserDAO {
     // Fix: Correct method signature for finding by username and password
     public User findByUsernameAndPassword(String username, String password) throws SQLException {
@@ -24,43 +23,39 @@ public class UserDAO {
         return null;
     }
 
-
-    // Replace existing createUser with a transactional implementation
+    // Fix: Ensure commit is done and connection is not closed before insert
     public boolean createUser(String username, String password, String role, Integer refId) throws SQLException {
         if (username == null || username.trim().isEmpty()) {
-            // nothing to do - caller should handle optional username case
             return false;
         }
 
         String sql = "INSERT INTO users (username, password, role, ref_id) VALUES (?, ?, ?, ?)";
-        try (Connection c = DBConnection.getConnection();
-             PreparedStatement p = c.prepareStatement(sql)) {
+        Connection c = null;
+        PreparedStatement p = null;
+        try {
+            c = DBConnection.getConnection();
+            c.setAutoCommit(false);
+            p = c.prepareStatement(sql);
+            p.setString(1, username);
+            p.setString(2, password);
+            p.setString(3, role);
+            if (refId == null) p.setNull(4, Types.INTEGER);
+            else p.setInt(4, refId);
 
-            boolean origAuto = c.getAutoCommit();
-            try {
-                c.setAutoCommit(false);
-
-                p.setString(1, username);
-                p.setString(2, password);
-                p.setString(3, role);
-                if (refId == null) p.setNull(4, Types.INTEGER);
-                else p.setInt(4, refId);
-
-                int rows = p.executeUpdate();
-                c.commit();
-                return rows > 0;
-            } catch (SQLIntegrityConstraintViolationException ex) {
-                // duplicate username or FK violation -> rollback and return false
-                try { c.rollback(); } catch (SQLException ignore) {}
-                System.err.println("createUser - integrity violation: " + ex.getMessage());
-                return false;
-            } catch (SQLException ex) {
-                try { c.rollback(); } catch (SQLException ignore) {}
-                System.err.println("createUser - SQL error: " + ex.getMessage());
-                throw ex;
-            } finally {
-                try { c.setAutoCommit(origAuto); } catch (SQLException ignore) {}
-            }
+            int rows = p.executeUpdate();
+            c.commit();
+            return rows > 0;
+        } catch (SQLIntegrityConstraintViolationException ex) {
+            if (c != null) try { c.rollback(); } catch (SQLException ignore) {}
+            System.err.println("createUser - integrity violation: " + ex.getMessage());
+            return false;
+        } catch (SQLException ex) {
+            if (c != null) try { c.rollback(); } catch (SQLException ignore) {}
+            System.err.println("createUser - SQL error: " + ex.getMessage());
+            throw ex;
+        } finally {
+            if (p != null) try { p.close(); } catch (SQLException ignore) {}
+            if (c != null) try { c.setAutoCommit(true); c.close(); } catch (SQLException ignore) {}
         }
     }
 

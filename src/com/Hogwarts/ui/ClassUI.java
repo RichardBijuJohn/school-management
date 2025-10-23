@@ -1,5 +1,6 @@
 package com.Hogwarts.ui;
 
+import com.Hogwarts.DAO.ClassDAO;
 import com.Hogwarts.DAO.StudentDAO;
 import com.Hogwarts.DAO.TeacherDAO;
 import com.Hogwarts.model.Student;
@@ -20,34 +21,54 @@ public class ClassUI {
 
     public JPanel getPanel() {
         JPanel p = new JPanel(new BorderLayout());
+        p.setBackground(new Color(245, 245, 220)); // beige
 
-        DefaultTableModel model = new DefaultTableModel(new String[]{"Class","No. of Students","Class Teacher"},0){
-            public boolean isCellEditable(int r,int c){return false;}
+        // Table model
+        DefaultTableModel model = new DefaultTableModel(
+                new String[]{"Grade", "No. of Students", "Class Teacher"}, 0
+        ) {
+            public boolean isCellEditable(int r, int c) {
+                return false;
+            }
         };
-        JTable table = new JTable(model);
-        p.add(new JScrollPane(table), BorderLayout.CENTER);
 
         JPanel bottomPanel = new JPanel(new BorderLayout());
-        JButton refreshBtn = new JButton("Refresh");
-        JButton addClassBtn = new JButton("Add Class");
+        bottomPanel.setBackground(new Color(245, 245, 220)); // beige
         JPanel btnPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
-        btnPanel.add(addClassBtn);
+        btnPanel.setBackground(new Color(245, 245, 220)); // beige
+        JTable table = new JTable(model);
+        table.setBackground(new Color(245, 245, 220)); // beige
+        p.add(new JScrollPane(table), BorderLayout.CENTER);
+        JButton refreshBtn = new JButton("Refresh");
         btnPanel.add(refreshBtn);
         bottomPanel.add(btnPanel, BorderLayout.EAST);
         p.add(bottomPanel, BorderLayout.SOUTH);
 
+        // --- REFRESH TABLE FUNCTION ---
         Runnable refresh = () -> {
             try {
                 model.setRowCount(0);
-                for (int cls = 1; cls <= 10; cls++){
+                // Fix: Ensure classNo is always a string with leading zero if needed (for class 1)
+                for (int cls = 1; cls <= 10; cls++) {
                     int count = studentDAO.countByClass(cls);
                     String classTeacherName = teacherDAO.getNameByClass(cls);
                     if (classTeacherName == null || classTeacherName.trim().isEmpty()) {
                         classTeacherName = "Unassigned";
                     }
+
+                
+                    ClassDAO classDAO = new ClassDAO();
+                    // Fix: Use integer classNo for updateClass and addClass
+                    boolean updated = classDAO.updateClass(
+                            cls, String.valueOf(cls), count, classTeacherName
+                    );
+                    if (!updated) {
+                        classDAO.addClass(String.valueOf(cls), count, classTeacherName);
+                    }
+
                     model.addRow(new Object[]{cls, count, classTeacherName});
                 }
-            } catch(SQLException ex){
+            } catch (SQLException ex) {
                 showErr(ex);
             }
         };
@@ -55,6 +76,7 @@ public class ClassUI {
         refresh.run();
         refreshBtn.addActionListener(e -> refresh.run());
 
+        // --- TABLE CLICK: VIEW STUDENTS IN CLASS ---
         table.addMouseListener(new java.awt.event.MouseAdapter() {
             public void mouseClicked(java.awt.event.MouseEvent evt) {
                 if (evt.getClickCount() == 1 && table.getSelectedRow() != -1) {
@@ -63,18 +85,32 @@ public class ClassUI {
                     try {
                         List<Student> students = studentDAO.getByClass(classNo);
                         if (students.isEmpty()) {
-                            JOptionPane.showMessageDialog(p, "No students found in this class.", "Class Students", JOptionPane.INFORMATION_MESSAGE);
+                            JOptionPane.showMessageDialog(p,
+                                    "No students found in this class.",
+                                    "Class Students",
+                                    JOptionPane.INFORMATION_MESSAGE);
                             return;
                         }
-                        JDialog dialog = new JDialog((Frame) null, "Students in Class " + classNo, true);
+
+                        JDialog dialog = new JDialog((Frame) null,
+                                "Students in Class " + classNo, true);
                         DefaultTableModel studentModel = new DefaultTableModel(
-                            new String[]{"ID", "Admission Number", "Name", "Age", "Address"}, 0
+                                new String[]{"ID", "Admission Number", "Name", "Age", "Gender"}, 0
                         ) {
-                            public boolean isCellEditable(int r, int c) { return false; }
+                            public boolean isCellEditable(int r, int c) {
+                                return false;
+                            }
                         };
                         for (Student s : students) {
-                            studentModel.addRow(new Object[]{ s.getId(), s.getAdmissionNumber(), s.getName(), s.getAge(), s.getAddress() });
+                            studentModel.addRow(new Object[]{
+                                    s.getId(),
+                                    s.getAdmissionNumber(),
+                                    s.getName(),
+                                    s.getAge(),
+                                    s.getGender()
+                            });
                         }
+
                         JTable studentTable = new JTable(studentModel);
                         studentTable.setRowHeight(24);
                         JScrollPane scroll = new JScrollPane(studentTable);
@@ -88,27 +124,12 @@ public class ClassUI {
                 }
             }
         });
-
-        addClassBtn.addActionListener(e -> {
-            JPanel form = new JPanel(new GridLayout(2,2,5,5));
-            JTextField classNoField = new JTextField();
-            JTextField teacherNameField = new JTextField();
-            form.add(new JLabel("Grade:")); form.add(classNoField);
-            form.add(new JLabel("Class Teacher Name:")); form.add(teacherNameField);
-            int res = JOptionPane.showConfirmDialog(p, form, "Add Class", JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE);
-            if (res == JOptionPane.OK_OPTION) {
-                try {
-                    int classNo = Integer.parseInt(classNoField.getText().trim());
-                    String teacherName = teacherNameField.getText().trim();
-                    teacherDAO.assignTeacherToClass(teacherName, classNo);
-                    refresh.run();
-                    JOptionPane.showMessageDialog(p, "Class added/updated successfully.");
-                } catch (Exception ex) { showErr(ex); }
-            }
-        });
-
+       
         return p;
     }
 
-    private void showErr(Exception ex){ ex.printStackTrace(); JOptionPane.showMessageDialog(null, "Error: " + ex.getMessage()); }
+    private void showErr(Exception ex) {
+        ex.printStackTrace();
+        JOptionPane.showMessageDialog(null, "Error: " + ex.getMessage());
+    }
 }

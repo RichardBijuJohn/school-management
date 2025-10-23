@@ -1,6 +1,4 @@
-
 package com.Hogwarts.DAO;
-
 import com.Hogwarts.DBConnection.DBConnection;
 import com.Hogwarts.model.Classes;
 import java.sql.*;
@@ -11,9 +9,9 @@ public class ClassDAO {
     // Fetch all classes
     public List<Classes> getAllClasses() {
         List<Classes> classesList = new ArrayList<>();
-        String sql = "SELECT * FROM Classes";
+        
         try (Connection conn = DBConnection.getConnection();
-             PreparedStatement ps = conn.prepareStatement("SELECT id, Grade, total_strength, class_teacher FROM class");
+             PreparedStatement ps = conn.prepareStatement("SELECT id, Grade, total_strength, class_teacher FROM classes");
              ResultSet rs = ps.executeQuery()) {
             while (rs.next()) {
                 Classes c = new Classes(
@@ -33,7 +31,8 @@ public class ClassDAO {
 
     // Add new class
     public boolean addClass(String Grade, int total_Strength, String class_teacher) {
-        String sql = "INSERT INTO `class` (Grade, total_strength, class_teacher) VALUES (?, ?, ?)";
+      System.out.println("[DEBUG] addClass called with parameters: Grade=" + Grade + ", total_Strength=" + total_Strength + ", class_teacher=" + class_teacher);    
+        String sql = "INSERT INTO classes (Grade, total_strength, class_teacher) VALUES (?, ?, ?)";
         try (Connection conn = DBConnection.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
 
@@ -41,12 +40,16 @@ public class ClassDAO {
                 System.err.println("[DEBUG] Connection is null");
                 return false;
             }
+             System.out.println("[DEBUG] Database connection established.");
+
 
             ps.setString(1, Grade);
             ps.setInt(2, total_Strength);
             ps.setString(3, class_teacher);
-
+            System.out.println("[DEBUG] About to execute insert statement…");
             int affected = ps.executeUpdate();
+            System.out.println("[DEBUG] Insert executed. Rows affected: " + affected);
+
             if (affected > 0) {
                 System.out.println("[DEBUG] ClassDAO.addClass: Inserted class grade=" + Grade);
                 return true;
@@ -64,7 +67,7 @@ public class ClassDAO {
 
     // Add updateClass method for updating class info if needed
     public boolean updateClass(int id, String Grade, int total_Strength, String class_teacher) {
-        String sql = "UPDATE class SET Grade=?, total_strength=?, class_teacher=? WHERE id=?";
+        String sql = "UPDATE classes SET Grade=?, total_strength=?, class_teacher=? WHERE id=?";
         try (Connection conn = DBConnection.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setString(1, Grade);

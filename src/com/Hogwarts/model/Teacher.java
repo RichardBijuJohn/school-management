@@ -8,7 +8,8 @@ public class Teacher {
     private String subject;
     private String qualification;
     private Integer classAssigned;
-    
+    private String username;
+    private String password;
 
     public Teacher() {}
 
@@ -27,13 +28,17 @@ public class Teacher {
         this(0, name, gender, phone_number, subject, qualification, classAssigned);
     }
 
+    public Teacher(String name, String subject) {
+        this.name = name;
+        this.subject = subject;
+    }
+
     public int getId() {
         return id;
     }
 
-    public String getName() {
-        return name;
-    }
+     public String getName() { return name; }
+    public void setName(String name) { this.name = name; }
 
         public String getGender() {
         return gender;
@@ -49,10 +54,8 @@ public class Teacher {
         return phone_number;
     }
 
-    public String getSubject() {
-        return subject;
-    }
-
+   public String getSubject() { return subject; }
+    public void setSubject(String subject) { this.subject = subject; }
     public String getQualification() {
         return qualification;
     }
@@ -66,4 +69,9 @@ public class Teacher {
         this.id = id;
     }
 
+    public String getUsername() { return username; }
+    public void setUsername(String username) { this.username = username; }
+    public String getPassword() { return password; }
+    public void setPassword(String password) { this.password = password; }
+    
 }
