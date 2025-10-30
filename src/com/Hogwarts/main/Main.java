@@ -1184,7 +1184,6 @@ class StudentForm {
         panel.add(new JLabel("Father's Name:")); panel.add(new JLabel(s.getFatherName()));
         panel.add(new JLabel("Father's Number:")); panel.add(new JLabel(s.getFatherNumber()));
         panel.add(new JLabel("DOB:")); panel.add(new JLabel(s.getDob()));
-
         JButton updateBtn = new JButton("Update");
         JButton deleteBtn = new JButton("Delete");
         JPanel btnPanel = new JPanel();
