@@ -714,25 +714,23 @@ public class Main {
 
             // Academic Performance Card
             JPanel marksCard = createCard();
-            marksCard.setLayout(new GridBagLayout());
-            gbc = new GridBagConstraints();
-            gbc.insets = new Insets(8, 12, 8, 12);
-            gbc.anchor = GridBagConstraints.WEST;
-            gbc.fill = GridBagConstraints.HORIZONTAL;
-
+            marksCard.setLayout(new BoxLayout(marksCard, BoxLayout.Y_AXIS));
+            marksCard.setBackground(new Color(245, 250, 255));
+            marksCard.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createLineBorder(new Color(52, 152, 219), 2, true),
+                new EmptyBorder(20, 30, 20, 30)
+            ));
             JLabel marksHeader = new JLabel("📊 Academic Performance");
-            marksHeader.setFont(new Font("Segoe UI", Font.BOLD, 18));
-            marksHeader.setForeground(PRIMARY);
-            gbc.gridx = 0; gbc.gridy = 0; gbc.gridwidth = 2;
-            marksCard.add(marksHeader, gbc);
-            gbc.gridwidth = 1;
+            marksHeader.setFont(new Font("Segoe UI", Font.BOLD, 20));
+            marksHeader.setForeground(new Color(41, 128, 185));
+            marksHeader.setAlignmentX(Component.LEFT_ALIGNMENT);
+            marksCard.add(marksHeader);
+            marksCard.add(Box.createRigidArea(new Dimension(0, 10)));
 
-            gbc.gridy++;
-            addMarksSection(marksCard, gbc, "📝 First Internal:", s.getFirstInternal());
-            gbc.gridy++;
-            addMarksSection(marksCard, gbc, "📝 Second Internal:", s.getSecondInternal());
-            gbc.gridy++;
-            addMarksSection(marksCard, gbc, "📝 Term Exam:", s.getTermExam());
+            // Custom attractive panel for each exam
+            addFancyMarksSection(marksCard, "📝 First Internal", s.getFirstInternal());
+            addFancyMarksSection(marksCard, "📝 Second Internal", s.getSecondInternal());
+            addFancyMarksSection(marksCard, "📝 Term Exam", s.getTermExam());
 
             contentPanel.add(marksCard);
 
@@ -824,6 +822,78 @@ public class Main {
             panel.add(noMarks, gbc);
         }
         gbc.gridwidth = 1;
+    }
+
+    // Attractive marks section for student dashboard
+    private void addFancyMarksSection(JPanel parent, String examName, String marksData) {
+        JPanel examPanel = new JPanel();
+        examPanel.setLayout(new BorderLayout());
+        examPanel.setBackground(new Color(255, 255, 255, 230));
+        examPanel.setBorder(BorderFactory.createCompoundBorder(
+            BorderFactory.createLineBorder(new Color(189, 195, 199), 1, true),
+            new EmptyBorder(12, 18, 12, 18)
+        ));
+
+        JLabel examLabel = new JLabel(examName);
+        examLabel.setFont(new Font("Segoe UI", Font.BOLD, 16));
+        examLabel.setForeground(new Color(52, 73, 94));
+        examPanel.add(examLabel, BorderLayout.NORTH);
+
+        JPanel marksGrid = new JPanel(new GridLayout(0, 2, 10, 6));
+        marksGrid.setOpaque(false);
+        int total = 0, count = 0;
+        if (marksData != null && !marksData.trim().isEmpty()) {
+            String[] markPairs = marksData.split(",");
+            for (String pair : markPairs) {
+                pair = pair.trim();
+                if (pair.contains(":")) {
+                    String[] parts = pair.split(":");
+                    if (parts.length == 2) {
+                        String subject = parts[0].trim();
+                        String mark = parts[1].trim();
+                        JLabel subjLabel = new JLabel(subject);
+                        subjLabel.setFont(new Font("Segoe UI", Font.BOLD, 13));
+                        subjLabel.setForeground(new Color(41, 128, 185));
+                        JLabel markLabel = new JLabel(mark + " / 60");
+                        markLabel.setFont(new Font("Segoe UI", Font.PLAIN, 13));
+                        markLabel.setForeground(new Color(44, 62, 80));
+                        marksGrid.add(subjLabel);
+                        marksGrid.add(markLabel);
+                        try { total += Integer.parseInt(mark); count++; } catch (NumberFormatException ignored) {}
+                    }
+                }
+            }
+        } else {
+            JLabel noMarks = new JLabel("No marks entered yet");
+            noMarks.setFont(new Font("Segoe UI", Font.ITALIC, 13));
+            noMarks.setForeground(new Color(127, 140, 141));
+            marksGrid.add(noMarks);
+        }
+        examPanel.add(marksGrid, BorderLayout.CENTER);
+
+        if (count > 0) {
+            double average = (double) total / count;
+            double percent = (average / 60) * 100;
+            JPanel statsPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 12, 0));
+            statsPanel.setOpaque(false);
+
+            // Color logic for total and percentage
+            Color statColor = total < 200 ? new Color(231, 76, 60) : new Color(39, 174, 96);
+
+            JLabel totalLabel = new JLabel("Total: " + total + " / " + (count * 60));
+            totalLabel.setFont(new Font("Segoe UI", Font.BOLD, 13));
+            totalLabel.setForeground(statColor);
+
+            JLabel percentLabel = new JLabel("Percentage: " + String.format("%.2f", percent) + "%");
+            percentLabel.setFont(new Font("Segoe UI", Font.BOLD, 13));
+            percentLabel.setForeground(statColor);
+
+            statsPanel.add(totalLabel);
+            statsPanel.add(percentLabel);
+            examPanel.add(statsPanel, BorderLayout.SOUTH);
+        }
+        parent.add(examPanel);
+        parent.add(Box.createRigidArea(new Dimension(0, 10)));
     }
 
     // ----------------- Small helper forms -----------------
