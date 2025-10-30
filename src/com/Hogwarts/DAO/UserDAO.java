@@ -77,4 +77,38 @@ public class UserDAO {
         }
         return null;
     }
+
+    // Find user by role and ref_id (e.g. TEACHER/STUDENT linked to teacher/student table)
+    public User findByRoleAndRefId(String role, int refId) throws SQLException {
+        String sql = "SELECT * FROM users WHERE role=? AND ref_id=?";
+        try (Connection c = DBConnection.getConnection();
+             PreparedStatement p = c.prepareStatement(sql)) {
+            p.setString(1, role);
+            p.setInt(2, refId);
+            try (ResultSet rs = p.executeQuery()) {
+                if (rs.next()) {
+                    return new User(rs.getInt("id"),
+                            rs.getString("username"),
+                            rs.getString("password"),
+                            rs.getString("role"),
+                            rs.getObject("ref_id") == null ? null : rs.getInt("ref_id"));
+                }
+            }
+        }
+        return null;
+    }
+
+    // Update username/password for an existing user identified by role+ref_id
+    public boolean updateUserCredentials(String role, int refId, String newUsername, String newPassword) throws SQLException {
+        if (newUsername == null || newUsername.trim().isEmpty()) return false;
+        String sql = "UPDATE users SET username=?, password=? WHERE role=? AND ref_id=?";
+        try (Connection c = DBConnection.getConnection(); PreparedStatement p = c.prepareStatement(sql)) {
+            p.setString(1, newUsername);
+            p.setString(2, newPassword);
+            p.setString(3, role);
+            p.setInt(4, refId);
+            int rows = p.executeUpdate();
+            return rows > 0;
+        }
+    }
 }

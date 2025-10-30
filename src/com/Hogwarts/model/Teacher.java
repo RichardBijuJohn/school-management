@@ -48,8 +48,6 @@ public class Teacher {
         this.gender = gender;
     }
 
-
-
     public String getPhone_number() {
         return phone_number;
     }

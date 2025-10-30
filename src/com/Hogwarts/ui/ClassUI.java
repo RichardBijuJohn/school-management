@@ -14,14 +14,36 @@ public class ClassUI {
     private final StudentDAO studentDAO;
     private final TeacherDAO teacherDAO;
 
+    // --- Local UI replacements for removed UITheme ---
+    private static final Color PRIMARY = new Color(52, 73, 94);
+    private static final Color BG = new Color(236, 240, 241);
+    private static final Color PANEL = new Color(235, 235, 235);
+    private static final Font BUTTON_FONT = new Font("SansSerif", Font.BOLD, 16);
+
+    private static void styleButton(AbstractButton b) {
+        b.setBackground(new Color(220, 220, 200));
+        b.setForeground(Color.DARK_GRAY);
+        b.setFocusPainted(false);
+        b.setBorder(BorderFactory.createEmptyBorder(6, 12, 6, 12));
+        b.setFont(BUTTON_FONT);
+    }
+
+    private static void styleTable(JTable t) {
+        t.setFillsViewportHeight(true);
+        t.setRowHeight(24);
+        t.setSelectionBackground(new Color(200, 200, 255));
+        t.getTableHeader().setReorderingAllowed(false);
+    }
+    // --- end replacements ---
+
     public ClassUI(StudentDAO studentDAO, TeacherDAO teacherDAO) {
         this.studentDAO = studentDAO;
         this.teacherDAO = teacherDAO;
     }
 
     public JPanel getPanel() {
-        JPanel p = new JPanel(new BorderLayout());
-        p.setBackground(new Color(245, 245, 220)); // beige
+    JPanel p = new JPanel(new BorderLayout());
+    p.setBackground(BG);
 
         // Table model
         DefaultTableModel model = new DefaultTableModel(
@@ -32,17 +54,10 @@ public class ClassUI {
             }
         };
 
-        JPanel bottomPanel = new JPanel(new BorderLayout());
-        bottomPanel.setBackground(new Color(245, 245, 220)); // beige
-        JPanel btnPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
-        btnPanel.setBackground(new Color(245, 245, 220)); // beige
         JTable table = new JTable(model);
-        table.setBackground(new Color(245, 245, 220)); // beige
+    table.setBackground(PANEL);
+    styleTable(table);
         p.add(new JScrollPane(table), BorderLayout.CENTER);
-        JButton refreshBtn = new JButton("Refresh");
-        btnPanel.add(refreshBtn);
-        bottomPanel.add(btnPanel, BorderLayout.EAST);
-        p.add(bottomPanel, BorderLayout.SOUTH);
 
         // --- REFRESH TABLE FUNCTION ---
         Runnable refresh = () -> {
@@ -74,7 +89,14 @@ public class ClassUI {
         };
 
         refresh.run();
-        refreshBtn.addActionListener(e -> refresh.run());
+
+        // Auto-refresh when panel gains focus (when user switches back to Classes tab)
+        p.addComponentListener(new java.awt.event.ComponentAdapter() {
+            @Override
+            public void componentShown(java.awt.event.ComponentEvent e) {
+                refresh.run();
+            }
+        });
 
         // --- TABLE CLICK: VIEW STUDENTS IN CLASS ---
         table.addMouseListener(new java.awt.event.MouseAdapter() {
@@ -111,8 +133,8 @@ public class ClassUI {
                             });
                         }
 
-                        JTable studentTable = new JTable(studentModel);
-                        studentTable.setRowHeight(24);
+                            JTable studentTable = new JTable(studentModel);
+                            styleTable(studentTable);
                         JScrollPane scroll = new JScrollPane(studentTable);
                         dialog.getContentPane().add(scroll, BorderLayout.CENTER);
                         dialog.setSize(600, 400);

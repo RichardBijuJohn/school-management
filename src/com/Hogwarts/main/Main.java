@@ -8,9 +8,8 @@ import com.Hogwarts.ui.TeacherUI;
 import java.awt.*;
 import java.sql.SQLException;
 import javax.swing.*;
+import javax.swing.border.EmptyBorder;
 import javax.swing.table.DefaultTableModel;
-
-
 
 public class Main {
     private JFrame frame;
@@ -18,97 +17,181 @@ public class Main {
     private StudentDAO studentDAO = new StudentDAO();
     private TeacherDAO teacherDAO = new TeacherDAO();
 
+    // --- Enhanced UI Theme ---
+    private static final Color PRIMARY = new Color(52, 73, 94);      // Dark blue-grey
+    private static final Color SECONDARY = new Color(41, 128, 185);  // Bright blue
+    private static final Color ACCENT = new Color(46, 204, 113);     // Green
+    private static final Color BG = new Color(236, 240, 241);        // Light grey
+    private static final Color CARD_BG = Color.WHITE;
+    private static final Color TEXT_PRIMARY = new Color(44, 62, 80);
+    private static final Color TEXT_SECONDARY = new Color(127, 140, 141);
+    
+    private static final Font TITLE_FONT = new Font("Segoe UI", Font.BOLD, 28);
+    private static final Font SUBTITLE_FONT = new Font("Segoe UI", Font.PLAIN, 16);
+    private static final Font BUTTON_FONT = new Font("Segoe UI", Font.BOLD, 14);
+    private static final Font LABEL_FONT = new Font("Segoe UI", Font.PLAIN, 14);
+
+    private static void styleButton(AbstractButton b) {
+        b.setBackground(SECONDARY);
+        b.setForeground(Color.WHITE);
+        b.setFocusPainted(false);
+        b.setBorderPainted(false);
+        b.setFont(BUTTON_FONT);
+        b.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        b.setBorder(BorderFactory.createCompoundBorder(
+            BorderFactory.createLineBorder(SECONDARY, 1, true),
+            BorderFactory.createEmptyBorder(10, 20, 10, 20)
+        ));
+        b.addMouseListener(new java.awt.event.MouseAdapter() {
+            public void mouseEntered(java.awt.event.MouseEvent evt) {
+                b.setBackground(new Color(31, 97, 141));
+            }
+            public void mouseExited(java.awt.event.MouseEvent evt) {
+                b.setBackground(SECONDARY);
+            }
+        });
+    }
+    
+    private static void styleAccentButton(AbstractButton b) {
+        b.setBackground(ACCENT);
+        b.setForeground(Color.WHITE);
+        b.setFocusPainted(false);
+        b.setBorderPainted(false);
+        b.setFont(BUTTON_FONT);
+        b.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        b.setBorder(BorderFactory.createCompoundBorder(
+            BorderFactory.createLineBorder(ACCENT, 1, true),
+            BorderFactory.createEmptyBorder(10, 20, 10, 20)
+        ));
+        b.addMouseListener(new java.awt.event.MouseAdapter() {
+            public void mouseEntered(java.awt.event.MouseEvent evt) {
+                b.setBackground(new Color(39, 174, 96));
+            }
+            public void mouseExited(java.awt.event.MouseEvent evt) {
+                b.setBackground(ACCENT);
+            }
+        });
+    }
+
+    private static void styleTable(JTable t) {
+        t.setFont(LABEL_FONT);
+        t.setRowHeight(32);
+        t.setShowGrid(false);
+        t.setIntercellSpacing(new Dimension(0, 0));
+        t.setSelectionBackground(new Color(52, 152, 219));
+        t.setSelectionForeground(Color.WHITE);
+        t.getTableHeader().setFont(new Font("Segoe UI", Font.BOLD, 14));
+        t.getTableHeader().setBackground(PRIMARY);
+        t.getTableHeader().setForeground(Color.WHITE);
+        t.getTableHeader().setReorderingAllowed(false);
+        t.setFillsViewportHeight(true);
+    }
+    
+    private static JPanel createCard() {
+        JPanel card = new JPanel();
+        card.setBackground(CARD_BG);
+        card.setBorder(BorderFactory.createCompoundBorder(
+            BorderFactory.createLineBorder(new Color(189, 195, 199), 1),
+            new EmptyBorder(20, 20, 20, 20)
+        ));
+        return card;
+    }
+    // --- end enhanced theme ---
 
     public static void main(String[] args) {
         SwingUtilities.invokeLater(() -> new Main().showLogin());
     }
 
-
     private void showLogin(){
         frame = new JFrame("School Management System - Login");
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        frame.setSize(520, 520);
+        frame.setSize(520, 600);
         frame.setLayout(new BorderLayout());
+        frame.getContentPane().setBackground(BG);
 
-        // Top panel for logo and title
-        JPanel topPanel = new JPanel(new BorderLayout());
-        topPanel.setBackground(new Color(245, 245, 220)); // beige
-        topPanel.setBorder(BorderFactory.createEmptyBorder(20, 0, 10, 0));
-
-
-        JLabel iconLabel = new JLabel();
-        iconLabel.setIcon(UIManager.getIcon("OptionPane.informationIcon"));
-        iconLabel.setHorizontalAlignment(JLabel.CENTER);
-
-
-        JLabel title = new JLabel("Hogwarts School Management", JLabel.CENTER);
-        title.setFont(new Font("Serif", Font.BOLD, 24));
-        title.setForeground(new Color(44, 62, 80));
-
-
-        JLabel subtitle = new JLabel("Login to your account", JLabel.CENTER);
-        subtitle.setFont(new Font("SansSerif", Font.PLAIN, 16));
-        subtitle.setForeground(new Color(100, 149, 237));
-        subtitle.setBorder(BorderFactory.createEmptyBorder(5, 0, 0, 0));
-
-
-        topPanel.add(iconLabel, BorderLayout.NORTH);
-        topPanel.add(title, BorderLayout.CENTER);
-        topPanel.add(subtitle, BorderLayout.SOUTH);
-
-
-        frame.add(topPanel, BorderLayout.NORTH);
-
-        // Main login panel
-        JPanel p = new JPanel(new GridBagLayout()) {
+        // Top panel with gradient
+        JPanel topPanel = new JPanel(new BorderLayout()) {
+            @Override
             protected void paintComponent(Graphics g) {
                 super.paintComponent(g);
-                Graphics2D g2 = (Graphics2D) g;
-                g2.setColor(new Color(245, 245, 220)); // beige
-                g2.fillRoundRect(0, 0, getWidth(), getHeight(), 30, 30);
+                Graphics2D g2d = (Graphics2D) g;
+                g2d.setRenderingHint(RenderingHints.KEY_RENDERING, RenderingHints.VALUE_RENDER_QUALITY);
+                GradientPaint gp = new GradientPaint(0, 0, PRIMARY, 0, getHeight(), SECONDARY);
+                g2d.setPaint(gp);
+                g2d.fillRect(0, 0, getWidth(), getHeight());
             }
         };
-        p.setOpaque(false);
-        p.setBorder(BorderFactory.createEmptyBorder(20, 30, 20, 30));
+        topPanel.setPreferredSize(new Dimension(520, 150));
+        topPanel.setBorder(new EmptyBorder(30, 0, 20, 0));
+
+        JLabel title = new JLabel("Hogwarts School Management", JLabel.CENTER);
+        title.setFont(TITLE_FONT);
+        title.setForeground(Color.WHITE);
+
+        JLabel subtitle = new JLabel("Login to your account", JLabel.CENTER);
+        subtitle.setFont(SUBTITLE_FONT);
+        subtitle.setForeground(new Color(236, 240, 241));
+
+        topPanel.add(title, BorderLayout.CENTER);
+        topPanel.add(subtitle, BorderLayout.SOUTH);
+        frame.add(topPanel, BorderLayout.NORTH);
+
+        // Main login card
+        JPanel cardPanel = new JPanel(new GridBagLayout());
+        cardPanel.setBackground(BG);
+        cardPanel.setBorder(new EmptyBorder(30, 40, 30, 40));
+        
+        JPanel loginCard = createCard();
+        loginCard.setLayout(new GridBagLayout());
         GridBagConstraints gbc = new GridBagConstraints();
         gbc.insets = new Insets(10, 10, 10, 10);
         gbc.fill = GridBagConstraints.HORIZONTAL;
-        
 
+        JLabel userLabel = new JLabel("Username:");
+        userLabel.setFont(LABEL_FONT);
+        userLabel.setForeground(TEXT_PRIMARY);
+        gbc.gridx = 0; gbc.gridy = 0; gbc.gridwidth = 2;
+        loginCard.add(userLabel, gbc);
 
-        gbc.gridx = 0; gbc.gridy = 0;
-        p.add(new JLabel("Username:"), gbc);
         JTextField tfUser = new JTextField(20);
-        tfUser.setFont(new Font("Open Sans", Font.PLAIN, 14));
-        gbc.gridx = 1; gbc.gridy = 0;
-        p.add(tfUser, gbc);
+        tfUser.setFont(LABEL_FONT);
+        tfUser.setBorder(BorderFactory.createCompoundBorder(
+            BorderFactory.createLineBorder(new Color(189, 195, 199), 1),
+            new EmptyBorder(8, 12, 8, 12)
+        ));
+        gbc.gridy = 1;
+        loginCard.add(tfUser, gbc);
 
-        gbc.gridx = 0; gbc.gridy = 1;
-        p.add(new JLabel("Password:"), gbc);
+        JLabel passLabel = new JLabel("Password:");
+        passLabel.setFont(LABEL_FONT);
+        passLabel.setForeground(TEXT_PRIMARY);
+        gbc.gridy = 2;
+        loginCard.add(passLabel, gbc);
+
         JPasswordField tfPass = new JPasswordField();
-        tfPass.setFont(new Font("Open Sans", Font.PLAIN, 14));
-        gbc.gridx = 1; gbc.gridy = 1;
-        p.add(tfPass, gbc);
-        gbc.gridx = 1; gbc.gridy = 2; gbc.gridwidth = 20;
+        tfPass.setFont(LABEL_FONT);
+        tfPass.setBorder(BorderFactory.createCompoundBorder(
+            BorderFactory.createLineBorder(new Color(189, 195, 199), 1),
+            new EmptyBorder(8, 12, 8, 12)
+        ));
+        gbc.gridy = 3;
+        loginCard.add(tfPass, gbc);
+
         JButton btnLogin = new JButton("Login");
-        btnLogin.setBackground(new Color(100, 149, 237));
-        btnLogin.setForeground(Color.WHITE);
-        btnLogin.setFont(new Font("SansSerif", Font.BOLD, 16));
-        btnLogin.setFocusPainted(false);
-        btnLogin.setBorder(BorderFactory.createEmptyBorder(8, 0, 8, 0));
-        p.add(btnLogin, gbc);
+        styleButton(btnLogin);
+        gbc.gridy = 4; gbc.insets = new Insets(20, 10, 10, 10);
+        loginCard.add(btnLogin, gbc);
 
-
-        frame.add(p, BorderLayout.CENTER);
+        cardPanel.add(loginCard);
+        frame.add(cardPanel, BorderLayout.CENTER);
 
         btnLogin.addActionListener(e -> {
-            String u = tfUser.getText().trim(); String pw = new String(tfPass.getPassword()).trim();
+            String u = tfUser.getText().trim();
+            String pw = new String(tfPass.getPassword()).trim();
             try {
                 User user = userDAO.findByUsernameAndPassword(u, pw);
                 if (user == null) {
-                    showStyledError(frame, 
-                        "The username or password you entered is incorrect.\nPlease try again.", 
-                        "Login Failed");
+                    showStyledError(frame, "Invalid username or password.", "Login Failed");
                     tfPass.setText("");
                     tfUser.requestFocus();
                     return;
@@ -123,88 +206,110 @@ public class Main {
             } catch (SQLException ex){ showErr(ex); }
         });
 
-
         frame.setLocationRelativeTo(null);
         frame.setVisible(true);
     }
-    // Styled error dialog
+
     private void showStyledError(JFrame parent, String message, String title) {
         JOptionPane.showMessageDialog(parent, message, title, JOptionPane.ERROR_MESSAGE);
     }
+
     private void showAdminPanel(){
-        JFrame f = new JFrame("Admin Panel");
-        f.setSize(1000, 600);
+        JFrame f = new JFrame("Admin Dashboard");
+        f.setSize(1200, 700);
         f.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 
+        JPanel mainPanel = new JPanel(new BorderLayout());
+        mainPanel.setBackground(BG);
+
+        // Enhanced header with gradient
+        JPanel headerPanel = new JPanel(new BorderLayout()) {
+            @Override
+            protected void paintComponent(Graphics g) {
+                super.paintComponent(g);
+                Graphics2D g2d = (Graphics2D) g;
+                g2d.setRenderingHint(RenderingHints.KEY_RENDERING, RenderingHints.VALUE_RENDER_QUALITY);
+                GradientPaint gp = new GradientPaint(0, 0, PRIMARY, getWidth(), 0, SECONDARY);
+                g2d.setPaint(gp);
+                g2d.fillRect(0, 0, getWidth(), getHeight());
+            }
+        };
+        headerPanel.setPreferredSize(new Dimension(1200, 80));
+        headerPanel.setBorder(new EmptyBorder(15, 30, 15, 30));
+
+        JLabel headerTitle = new JLabel("Admin Dashboard");
+        headerTitle.setFont(new Font("Segoe UI", Font.BOLD, 24));
+        headerTitle.setForeground(Color.WHITE);
+
+        JButton logoutBtn = new JButton("Logout");
+        logoutBtn.setBackground(new Color(231, 76, 60));
+        logoutBtn.setForeground(Color.WHITE);
+        logoutBtn.setFont(new Font("Segoe UI", Font.BOLD, 12));
+        logoutBtn.setFocusPainted(false);
+        logoutBtn.setBorderPainted(false);
+        logoutBtn.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        logoutBtn.setBorder(new EmptyBorder(6, 15, 6, 15));
+
+        headerPanel.add(headerTitle, BorderLayout.WEST);
+        headerPanel.add(logoutBtn, BorderLayout.EAST);
+        mainPanel.add(headerPanel, BorderLayout.NORTH);
+
+        // Tabbed pane with custom UI
         JTabbedPane tabs = new JTabbedPane();
+        tabs.setFont(LABEL_FONT);
+        tabs.setBackground(CARD_BG);
 
         // --- Home Tab ---
         JPanel homePanel = new JPanel();
         homePanel.setLayout(new BoxLayout(homePanel, BoxLayout.Y_AXIS));
-        homePanel.setBackground(new Color(245, 245, 220)); // beige
-        homePanel.setBorder(BorderFactory.createEmptyBorder(40, 40, 40, 40));
+        homePanel.setBackground(BG);
+        homePanel.setBorder(new EmptyBorder(40, 60, 40, 60));
 
         JLabel welcomeLabel = new JLabel("Hogwarts School Management System", JLabel.CENTER);
-        welcomeLabel.setFont(new Font("Serif", Font.BOLD, 30));
+        welcomeLabel.setFont(TITLE_FONT);
+        welcomeLabel.setForeground(PRIMARY);
         welcomeLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
 
-        JLabel infoLabel = new JLabel("<html><div style='text-align:center;'>"
-            + "This school is not a normal school we give admission to the kids having different magical skills<br>"
-            + "Harry Potter , Ron Weasley and Hermione are a proud alumini.<br>"
-                +"Albus dumbledore the headmaster is a very encouraging person.<br> He helps students and supports them always.<br>"
-            +"Voldemort is our principal  '_'<br>"
-            + "<b>Contact:</b> hogwarts@school.edu<br>"
-            + "<b>Phone:</b>1234567890<br>"
+        JPanel infoCard = createCard();
+        infoCard.setLayout(new BoxLayout(infoCard, BoxLayout.Y_AXIS));
+        
+        JLabel infoLabel = new JLabel("<html><div style='text-align:center; line-height:1.8;'>"
+            + "<p style='font-size:14px; color:#7f8c8d;'>This school provides an atmosphere for students with magical skills</p>"
+            + "<p style='font-size:14px; color:#7f8c8d;'>Harry Potter, Ron Weasley and Hermione are proud alumni</p>"
+            + "<p style='font-size:14px; color:#7f8c8d;'>Albus Dumbledore, the headmaster, is very encouraging and supportive</p><br>"
+            + "<p style='font-size:14px; color:#2c3e50;'><b>Contact:</b> hogwarts@school.edu</p>"
+            + "<p style='font-size:14px; color:#2c3e50;'><b>Phone:</b> 1234567890</p>"
             + "</div></html>", JLabel.CENTER);
-        infoLabel.setFont(new Font("SansSerif", Font.PLAIN, 16));
         infoLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
+        infoCard.add(infoLabel);
 
         homePanel.add(welcomeLabel);
         homePanel.add(Box.createRigidArea(new Dimension(0, 30)));
-        homePanel.add(infoLabel);
+        homePanel.add(infoCard);
 
-
-        // --- Students Tab ---
+        // --- Other Tabs ---
         StudentUI studentUI = new StudentUI(studentDAO, userDAO);
         JPanel studentPanel = studentUI.getPanel();
-        studentPanel.setBackground(new Color(245, 245, 220)); // beige
+        studentPanel.setBackground(BG);
 
-        // --- Teachers Tab ---
         TeacherUI teacherUI = new TeacherUI(teacherDAO, userDAO);
         JPanel teacherPanel = teacherUI.getPanel();
-        teacherPanel.setBackground(new Color(245, 245, 220)); // beige
+        teacherPanel.setBackground(BG);
 
-        // --- Classes Tab ---
         ClassUI classUI = new ClassUI(studentDAO, teacherDAO);
         JPanel classPanel = classUI.getPanel();
-        classPanel.setBackground(new Color(245, 245, 220)); // beige
+        classPanel.setBackground(BG);
 
-        tabs.addTab("Home", homePanel);
-        tabs.addTab("Students", studentPanel);
-        tabs.addTab("Teachers", teacherPanel);
-        tabs.addTab("Classes", classPanel);
+        tabs.addTab("  Home  ", homePanel);
+        tabs.addTab("  Students  ", studentPanel);
+        tabs.addTab("  Teachers  ", teacherPanel);
+        tabs.addTab("  Classes  ", classPanel);
 
-        // Add logout button to the top right
-        JPanel topPanel = new JPanel(new BorderLayout());
-        topPanel.setBackground(new Color(245, 245, 220));
-        JButton logoutBtn = new JButton("Logout");
-        logoutBtn.setFont(new Font("SansSerif", Font.BOLD, 14));
-        JPanel logoutPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
-        logoutPanel.setBackground(new Color(245, 245, 220));
-        logoutPanel.add(logoutBtn);
-        topPanel.add(logoutPanel, BorderLayout.EAST);
-
-        // Add the tabbed pane below the logout button
-        JPanel mainPanel = new JPanel(new BorderLayout());
-        mainPanel.setBackground(new Color(245, 245, 220));
-        mainPanel.add(topPanel, BorderLayout.NORTH);
         mainPanel.add(tabs, BorderLayout.CENTER);
-
         f.setContentPane(mainPanel);
 
         logoutBtn.addActionListener(e -> {
-            f.dispose(); // Properly dispose the frame
-            // Always create a new Main instance to show login
+            f.dispose();
             new Main().showLogin();
         });
 
@@ -214,37 +319,83 @@ public class Main {
 
     // ----------------- Teacher Panel -----------------
     private void showTeacherPanel(User user){
-        JFrame f = new JFrame("Teacher Panel");
-        f.setSize(800, 550);
+        JFrame f = new JFrame("Teacher Dashboard");
+        f.setSize(1000, 650);
         f.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 
-        JTabbedPane tabs = new JTabbedPane();
-
-        try {
-            Teacher t = teacherDAO.getById(user.getRefId());
-            tabs.addTab("My Class students", teacherStudentsPanel(t, f));
-        } catch(SQLException ex){ showErr(ex); }
-
-        // Add logout button to the top right
-        JPanel topPanel = new JPanel(new BorderLayout());
-        topPanel.setBackground(new Color(245, 245, 220));
-        JButton logoutBtn = new JButton("Logout");
-        logoutBtn.setFont(new Font("SansSerif", Font.BOLD, 14));
-        JPanel logoutPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
-        logoutPanel.setBackground(new Color(245, 245, 220));
-        logoutPanel.add(logoutBtn);
-        topPanel.add(logoutPanel, BorderLayout.EAST);
-
         JPanel mainPanel = new JPanel(new BorderLayout());
-        mainPanel.setBackground(new Color(245, 245, 220));
-        mainPanel.add(topPanel, BorderLayout.NORTH);
-        mainPanel.add(tabs, BorderLayout.CENTER);
+        mainPanel.setBackground(BG);
 
+        Teacher teacher = null;
+        try {
+            teacher = teacherDAO.getById(user.getRefId());
+        } catch(SQLException ex){ showErr(ex); }
+        
+        final Teacher t = teacher; // final reference for lambda
+
+        // Enhanced header
+        JPanel headerPanel = new JPanel(new BorderLayout()) {
+            @Override
+            protected void paintComponent(Graphics g) {
+                super.paintComponent(g);
+                Graphics2D g2d = (Graphics2D) g;
+                g2d.setRenderingHint(RenderingHints.KEY_RENDERING, RenderingHints.VALUE_RENDER_QUALITY);
+                GradientPaint gp = new GradientPaint(0, 0, PRIMARY, getWidth(), 0, ACCENT);
+                g2d.setPaint(gp);
+                g2d.fillRect(0, 0, getWidth(), getHeight());
+            }
+        };
+        headerPanel.setPreferredSize(new Dimension(1000, 80));
+        headerPanel.setBorder(new EmptyBorder(15, 30, 15, 30));
+
+        // Left side: Title and class info
+        JPanel titlePanel = new JPanel();
+        titlePanel.setLayout(new FlowLayout(FlowLayout.LEFT, 0, 0));
+        titlePanel.setOpaque(false);
+        
+        JLabel headerTitle = new JLabel("Teacher Dashboard");
+        headerTitle.setFont(new Font("Segoe UI", Font.BOLD, 24));
+        headerTitle.setForeground(Color.WHITE);
+        headerTitle.setAlignmentX(Component.LEFT_ALIGNMENT);
+
+        JLabel classInfo = new JLabel();
+        if (t != null && t.getClassAssigned() != null) {
+            classInfo.setText("📚 Class " + t.getClassAssigned());
+        } else {
+            classInfo.setText("📚 No Class Assigned");
+        }
+        classInfo.setFont(new Font("Segoe UI", Font.BOLD, 16));
+        classInfo.setForeground(new Color(255, 255, 255));
+        classInfo.setBorder(BorderFactory.createEmptyBorder(0, 20, 0, 0));
+        titlePanel.add(headerTitle);
+        titlePanel.add(classInfo);
+
+        JButton logoutBtn = new JButton("Logout");
+        logoutBtn.setBackground(new Color(231, 76, 60));
+        logoutBtn.setForeground(Color.WHITE);
+        logoutBtn.setFont(new Font("Segoe UI", Font.BOLD, 12));
+        logoutBtn.setFocusPainted(false);
+        logoutBtn.setBorderPainted(false);
+        logoutBtn.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        logoutBtn.setBorder(new EmptyBorder(6, 15, 6, 15));
+
+        headerPanel.add(titlePanel, BorderLayout.WEST);
+        headerPanel.add(logoutBtn, BorderLayout.EAST);
+        mainPanel.add(headerPanel, BorderLayout.NORTH);
+
+        JTabbedPane tabs = new JTabbedPane();
+        tabs.setFont(LABEL_FONT);
+        tabs.setBackground(CARD_BG);
+
+        if (t != null) {
+             tabs.addTab("  My Class Students  ", teacherStudentsPanel(t, f));
+        }
+
+        mainPanel.add(tabs, BorderLayout.CENTER);
         f.setContentPane(mainPanel);
 
         logoutBtn.addActionListener(e -> {
-            f.dispose(); // Properly dispose the frame
-            // Always create a new Main instance to show login
+            f.dispose();
             new Main().showLogin();
         });
 
@@ -252,35 +403,44 @@ public class Main {
         f.setVisible(true);
     }
 
-
     // Enhanced teacherStudentsPanel with search and back button
     private JPanel teacherStudentsPanel(Teacher teacher, JFrame parentFrame){
-        JPanel p = new JPanel(new BorderLayout());
-        p.setBackground(new Color(245, 245, 220)); // beige
+    JPanel p = new JPanel(new BorderLayout());
+    p.setBackground(BG);
+    p.setBorder(new EmptyBorder(20, 20, 20, 20));
 
-        JPanel searchPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
-        searchPanel.setBackground(new Color(245, 245, 220)); // beige
-        JTextField searchField = new JTextField(20);
+    JPanel searchPanel = createCard();
+    searchPanel.setLayout(new FlowLayout(FlowLayout.LEFT));
+        JTextField searchField = new JTextField(25);
+        searchField.setFont(LABEL_FONT);
+        searchField.setBorder(BorderFactory.createCompoundBorder(
+            BorderFactory.createLineBorder(new Color(189, 195, 199), 1),
+            new EmptyBorder(8, 12, 8, 12)
+        ));
         JButton searchBtn = new JButton("Search");
+        styleButton(searchBtn);
         
-        searchPanel.add(new JLabel("Search Student by ID/Name:"));
+        searchPanel.add(new JLabel("Search Student:"));
         searchPanel.add(searchField);
         searchPanel.add(searchBtn);
         p.add(searchPanel, BorderLayout.NORTH);
 
-        // Remove "Marks" column
         DefaultTableModel model = new DefaultTableModel(
             new String[]{"ID","Name","Age","Class"}, 0
         ) {
             public boolean isCellEditable(int r,int c){return false;}
         };
-        JTable table = new JTable(model);
-        p.add(new JScrollPane(table), BorderLayout.CENTER);
+    JTable table = new JTable(model);
+    styleTable(table);
+    JScrollPane scrollPane = new JScrollPane(table);
+    scrollPane.setBorder(BorderFactory.createEmptyBorder(15, 0, 15, 0));
+    p.add(scrollPane, BorderLayout.CENTER);
 
-        JPanel ctrl = new JPanel();
-        ctrl.setBackground(new Color(245, 245, 220)); // beige
-        JButton enterMarks = new JButton("Enter/Update Marks");
-        ctrl.add(enterMarks);
+    JPanel ctrl = createCard();
+    ctrl.setLayout(new FlowLayout(FlowLayout.CENTER));
+    JButton enterMarks = new JButton("Enter/Update Marks");
+    styleAccentButton(enterMarks);
+    ctrl.add(enterMarks);
         p.add(ctrl, BorderLayout.SOUTH);
 
         Runnable refresh = () -> {
@@ -315,70 +475,318 @@ public class Main {
 
 
         enterMarks.addActionListener(e -> {
-    int r = table.getSelectedRow();
-    if (r == -1) {
-        JOptionPane.showMessageDialog(null, "Select a student");
-        return;
+            int r = table.getSelectedRow();
+            if (r == -1) {
+                JOptionPane.showMessageDialog(null, "Select a student");
+                return;
+            }
+            int id = Integer.parseInt(model.getValueAt(r, 0).toString());
+            Student s = null;
+            try {
+                for (Student st : studentDAO.getByClass(teacher.getClassAssigned()))
+                    if (st.getId() == id) s = st;
+            } catch (SQLException ex) { showErr(ex); return; }
+
+            if (s == null) {
+                JOptionPane.showMessageDialog(null, "You can only edit students of your class.");
+                return;
+            }
+
+            // --- New UI for marks entry ---
+            String[] exams = {"First Internal", "Second Internal", "Term Exam"};
+            JComboBox<String> examBox = new JComboBox<>(exams);
+
+            String[] subjects = {
+                "English", "Maths", "Science", "Social", "Hindi",
+                "Computer", "Physics", "Chemistry", "Biology", "History"
+            };
+
+            java.util.Map<String, JTextField> subjectFields = new java.util.HashMap<>();
+
+            JPanel marksPanel = new JPanel(new BorderLayout(0, 10));
+            marksPanel.setBorder(new EmptyBorder(10, 10, 10, 10));
+            marksPanel.setBackground(Color.WHITE);
+
+            // Student info at top
+            JPanel infoPanel = new JPanel(new GridLayout(2, 1, 0, 4));
+            infoPanel.setOpaque(false);
+            JLabel nameLabel = new JLabel("Student: " + s.getName() + " (ID: " + s.getId() + ")");
+            nameLabel.setFont(new Font("Segoe UI", Font.BOLD, 16));
+            infoPanel.add(nameLabel);
+            JPanel examPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 0));
+            examPanel.setOpaque(false);
+            examPanel.add(new JLabel("Examination: "));
+            examPanel.add(examBox);
+            infoPanel.add(examPanel);
+            marksPanel.add(infoPanel, BorderLayout.NORTH);
+
+            // Subjects grid
+            JPanel subjectsGrid = new JPanel(new GridLayout(subjects.length, 2, 8, 8));
+            subjectsGrid.setOpaque(false);
+            for (String subject : subjects) {
+                JLabel lbl = new JLabel(subject + ":");
+                lbl.setFont(new Font("Segoe UI", Font.PLAIN, 14));
+                JTextField field = new JTextField(5);
+                field.setFont(new Font("Segoe UI", Font.PLAIN, 14));
+                subjectFields.put(subject, field);
+                subjectsGrid.add(lbl);
+                subjectsGrid.add(field);
+            }
+            marksPanel.add(subjectsGrid, BorderLayout.CENTER);
+
+            // Helper method to populate marks from string
+            final Student selectedStudent = s;
+            Runnable populateMarks = () -> {
+                String examSel = (String) examBox.getSelectedItem();
+                String existingMarks = "";
+                if (examSel.equals("First Internal")) {
+                    existingMarks = selectedStudent.getFirstInternal();
+                } else if (examSel.equals("Second Internal")) {
+                    existingMarks = selectedStudent.getSecondInternal();
+                } else if (examSel.equals("Term Exam")) {
+                    existingMarks = selectedStudent.getTermExam();
+                }
+                for (JTextField field : subjectFields.values()) field.setText("");
+                if (existingMarks != null && !existingMarks.trim().isEmpty()) {
+                    String[] markPairs = existingMarks.split(",");
+                    for (String pair : markPairs) {
+                        pair = pair.trim();
+                        if (pair.contains(":")) {
+                            String[] parts = pair.split(":");
+                            if (parts.length == 2) {
+                                String subject = parts[0].trim();
+                                String mark = parts[1].trim();
+                                if (subjectFields.containsKey(subject)) {
+                                    subjectFields.get(subject).setText(mark);
+                                }
+                            }
+                        }
+                    }
+                }
+            };
+            examBox.addActionListener(evt -> populateMarks.run());
+            populateMarks.run();
+
+            JScrollPane scroll = new JScrollPane(marksPanel);
+            scroll.setPreferredSize(new Dimension(400, 400));
+
+            int res = JOptionPane.showConfirmDialog(
+                null, scroll, "Enter/Update Marks for " + s.getName(),
+                JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE
+            );
+
+            if (res == JOptionPane.OK_OPTION) {
+                String examSel = (String) examBox.getSelectedItem();
+                try {
+                    StringBuilder marksSummary = new StringBuilder();
+                    for (String subject : subjects) {
+                        String raw = subjectFields.get(subject).getText().trim();
+                        if (raw.isEmpty()) raw = "0";
+                        int markVal;
+                        try {
+                            markVal = Integer.parseInt(raw);
+                        } catch (NumberFormatException nfe) {
+                            JOptionPane.showMessageDialog(null,
+                                    "Invalid mark for \"" + subject + "\". Please enter an integer between 0 and 60.",
+                                    "Invalid Mark", JOptionPane.ERROR_MESSAGE);
+                            return;
+                        }
+                        if (markVal < 0 || markVal > 60) {
+                            JOptionPane.showMessageDialog(null,
+                                    "Mark for \"" + subject + "\" must be between 0 and 60.",
+                                    "Invalid Mark", JOptionPane.ERROR_MESSAGE);
+                            return;
+                        }
+                        marksSummary.append(subject).append(":").append(markVal).append(", ");
+                    }
+                    if (examSel.equals("First Internal")) s.setFirstInternal(marksSummary.toString());
+                    else if (examSel.equals("Second Internal")) s.setSecondInternal(marksSummary.toString());
+                    else if (examSel.equals("Term Exam")) s.setTermExam(marksSummary.toString());
+
+                    studentDAO.update(s);
+                    refresh.run();
+
+                } catch (SQLException ex) {
+                    showErr(ex);
+                }
+            }
+        });
+
+        return p;
     }
-    int id = Integer.parseInt(model.getValueAt(r, 0).toString());
-    Student s = null;
-    try {
-        for (Student st : studentDAO.getByClass(teacher.getClassAssigned()))
-            if (st.getId() == id) s = st;
-    } catch (SQLException ex) { showErr(ex); return; }
+    // ----------------- Student Panel -----------------
+    private void showStudentPanel(User user){
+        JFrame f = new JFrame("Student Dashboard");
+        f.setSize(900, 700);
+        f.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 
-    if (s == null) {
-        JOptionPane.showMessageDialog(null, "You can only edit students of your class.");
-        return;
+        JPanel mainPanel = new JPanel(new BorderLayout());
+        mainPanel.setBackground(BG);
+
+        // Enhanced header with gradient
+        JPanel headerPanel = new JPanel(new BorderLayout()) {
+            @Override
+            protected void paintComponent(Graphics g) {
+                super.paintComponent(g);
+                Graphics2D g2d = (Graphics2D) g;
+                g2d.setRenderingHint(RenderingHints.KEY_RENDERING, RenderingHints.VALUE_RENDER_QUALITY);
+                GradientPaint gp = new GradientPaint(0, 0, PRIMARY, getWidth(), 0, new Color(155, 89, 182));
+                g2d.setPaint(gp);
+                g2d.fillRect(0, 0, getWidth(), getHeight());
+            }
+        };
+        headerPanel.setPreferredSize(new Dimension(900, 80));
+        headerPanel.setBorder(new EmptyBorder(15, 30, 15, 30));
+
+        JLabel headerTitle = new JLabel("Student Dashboard");
+        headerTitle.setFont(new Font("Segoe UI", Font.BOLD, 24));
+        headerTitle.setForeground(Color.WHITE);
+
+        JButton logoutBtn = new JButton("Logout");
+        logoutBtn.setBackground(new Color(231, 76, 60));
+        logoutBtn.setForeground(Color.WHITE);
+        logoutBtn.setFont(new Font("Segoe UI", Font.BOLD, 12));
+        logoutBtn.setFocusPainted(false);
+        logoutBtn.setBorderPainted(false);
+        logoutBtn.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        logoutBtn.setBorder(new EmptyBorder(6, 15, 6, 15));
+
+        headerPanel.add(headerTitle, BorderLayout.WEST);
+        headerPanel.add(logoutBtn, BorderLayout.EAST);
+        mainPanel.add(headerPanel, BorderLayout.NORTH);
+
+        // Content area with student profile
+        JPanel contentPanel = new JPanel();
+        contentPanel.setLayout(new BoxLayout(contentPanel, BoxLayout.Y_AXIS));
+        contentPanel.setBackground(BG);
+        contentPanel.setBorder(new EmptyBorder(30, 40, 30, 40));
+        
+        try {
+            Student s = null;
+            for (Student st: studentDAO.getAll()) if (st.getId()==user.getRefId()) s=st;
+            if (s==null){ JOptionPane.showMessageDialog(null,"Student profile not found"); return; }
+            
+            // Welcome message
+            JLabel welcomeLabel = new JLabel("Welcome, " + s.getName() + "!", JLabel.CENTER);
+            welcomeLabel.setFont(TITLE_FONT);
+            welcomeLabel.setForeground(PRIMARY);
+            welcomeLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
+            contentPanel.add(welcomeLabel);
+            contentPanel.add(Box.createRigidArea(new Dimension(0, 20)));
+            
+            // Profile Information Card
+            JPanel profileCard = createCard();
+            profileCard.setLayout(new GridBagLayout());
+            GridBagConstraints gbc = new GridBagConstraints();
+            gbc.insets = new Insets(8, 12, 8, 12);
+            gbc.anchor = GridBagConstraints.WEST;
+            gbc.fill = GridBagConstraints.HORIZONTAL;
+
+            // Section header
+            JLabel profileHeader = new JLabel("📋 Personal Information");
+            profileHeader.setFont(new Font("Segoe UI", Font.BOLD, 18));
+            profileHeader.setForeground(PRIMARY);
+            gbc.gridx = 0; gbc.gridy = 0; gbc.gridwidth = 2;
+            profileCard.add(profileHeader, gbc);
+            gbc.gridwidth = 1;
+
+            gbc.gridy++;
+            addProfileRow(profileCard, gbc, "🆔 Admission Number:", s.getAdmissionNumber());
+            gbc.gridy++;
+            addProfileRow(profileCard, gbc, "👤 Name:", s.getName());
+            gbc.gridy++;
+            addProfileRow(profileCard, gbc, "📅 Age:", String.valueOf(s.getAge()));
+            gbc.gridy++;
+            addProfileRow(profileCard, gbc, "🏫 Class:", String.valueOf(s.getClassNo()));
+            gbc.gridy++;
+            addProfileRow(profileCard, gbc, "⚧ Gender:", s.getGender());
+            gbc.gridy++;
+            addProfileRow(profileCard, gbc, "🏠 Address:", s.getAddress());
+            gbc.gridy++;
+            addProfileRow(profileCard, gbc, "🎂 Date of Birth:", s.getDob());
+            gbc.gridy++;
+            addProfileRow(profileCard, gbc, "👨 Father's Name:", s.getFatherName());
+            gbc.gridy++;
+            addProfileRow(profileCard, gbc, "📞 Father's Number:", s.getFatherNumber());
+
+            contentPanel.add(profileCard);
+            contentPanel.add(Box.createRigidArea(new Dimension(0, 20)));
+
+            // Academic Performance Card
+            JPanel marksCard = createCard();
+            marksCard.setLayout(new GridBagLayout());
+            gbc = new GridBagConstraints();
+            gbc.insets = new Insets(8, 12, 8, 12);
+            gbc.anchor = GridBagConstraints.WEST;
+            gbc.fill = GridBagConstraints.HORIZONTAL;
+
+            JLabel marksHeader = new JLabel("📊 Academic Performance");
+            marksHeader.setFont(new Font("Segoe UI", Font.BOLD, 18));
+            marksHeader.setForeground(PRIMARY);
+            gbc.gridx = 0; gbc.gridy = 0; gbc.gridwidth = 2;
+            marksCard.add(marksHeader, gbc);
+            gbc.gridwidth = 1;
+
+            gbc.gridy++;
+            addMarksSection(marksCard, gbc, "📝 First Internal:", s.getFirstInternal());
+            gbc.gridy++;
+            addMarksSection(marksCard, gbc, "📝 Second Internal:", s.getSecondInternal());
+            gbc.gridy++;
+            addMarksSection(marksCard, gbc, "📝 Term Exam:", s.getTermExam());
+
+            contentPanel.add(marksCard);
+
+         } catch(SQLException ex){ showErr(ex); }
+
+        // Wrap content in scroll pane
+        JScrollPane scrollPane = new JScrollPane(contentPanel);
+        scrollPane.setBorder(null);
+        scrollPane.getVerticalScrollBar().setUnitIncrement(16);
+        mainPanel.add(scrollPane, BorderLayout.CENTER);
+
+        f.setContentPane(mainPanel);
+
+        logoutBtn.addActionListener(e -> {
+            f.dispose();
+             showLogin();
+         });
+
+        f.setLocationRelativeTo(null);
+        f.setVisible(true);
     }
 
-    // Dropdown for exam selection
-    String[] exams = {"First Internal", "Second Internal", "Term Exam"};
-    JComboBox<String> examBox = new JComboBox<>(exams);
+    // Helper method to add profile rows with consistent styling
+    private void addProfileRow(JPanel panel, GridBagConstraints gbc, String label, String value) {
+        JLabel lblKey = new JLabel(label);
+        lblKey.setFont(new Font("Segoe UI", Font.BOLD, 14));
+        lblKey.setForeground(TEXT_PRIMARY);
+        gbc.gridx = 0;
+        panel.add(lblKey, gbc);
 
-    // Subjects list
-    String[] subjects = {
-        "English", "Maths", "Science", "Social", "Hindi",
-        "Computer", "Physics", "Chemistry", "Biology", "History"
-    };
-
-    // Create a map of subject -> JTextField
-    java.util.Map<String, JTextField> subjectFields = new java.util.HashMap<>();
-
-    JPanel marksPanel = new JPanel(new GridLayout(subjects.length + 1, 2, 8, 8));
-    marksPanel.add(new JLabel("Examination:"));
-    marksPanel.add(examBox);
-
-    // Add text fields for each subject
-    for (String subject : subjects) {
-        marksPanel.add(new JLabel(subject + ":"));
-        JTextField field = new JTextField(5);
-        subjectFields.put(subject, field);
-        marksPanel.add(field);
+        JLabel lblValue = new JLabel(value != null ? value : "N/A");
+        lblValue.setFont(LABEL_FONT);
+        lblValue.setForeground(TEXT_SECONDARY);
+        gbc.gridx = 1;
+        panel.add(lblValue, gbc);
     }
 
-    // Helper method to populate marks from string
-    final Student selectedStudent = s;
-    Runnable populateMarks = () -> {
-        String examSel = (String) examBox.getSelectedItem();
-        String existingMarks = "";
-        
-        if (examSel.equals("First Internal")) {
-            existingMarks = selectedStudent.getFirstInternal();
-        } else if (examSel.equals("Second Internal")) {
-            existingMarks = selectedStudent.getSecondInternal();
-        } else if (examSel.equals("Term Exam")) {
-            existingMarks = selectedStudent.getTermExam();
-        }
-        
-        // Clear all fields first
-        for (JTextField field : subjectFields.values()) {
-            field.setText("");
-        }
-        
-        // Parse existing marks and populate fields
-        if (existingMarks != null && !existingMarks.trim().isEmpty()) {
-            String[] markPairs = existingMarks.split(",");
+    // Helper method to add marks section with formatted display
+    private void addMarksSection(JPanel panel, GridBagConstraints gbc, String examName, String marksData) {
+        JLabel examLabel = new JLabel(examName);
+        examLabel.setFont(new Font("Segoe UI", Font.BOLD, 14));
+        examLabel.setForeground(TEXT_PRIMARY);
+        gbc.gridx = 0; gbc.gridwidth = 2;
+        panel.add(examLabel, gbc);
+        gbc.gridwidth = 1;
+        gbc.gridy++;
+
+        if (marksData != null && !marksData.trim().isEmpty()) {
+            // Parse and display marks in a nice format
+            String[] markPairs = marksData.split(",");
+            StringBuilder formattedMarks = new StringBuilder("<html><body style='padding-left:20px;'>");
+            int total = 0;
+            int count = 0;
+            
             for (String pair : markPairs) {
                 pair = pair.trim();
                 if (pair.contains(":")) {
@@ -386,95 +794,37 @@ public class Main {
                     if (parts.length == 2) {
                         String subject = parts[0].trim();
                         String mark = parts[1].trim();
-                        if (subjectFields.containsKey(subject)) {
-                            subjectFields.get(subject).setText(mark);
-                        }
+                        formattedMarks.append("<b>").append(subject).append(":</b> ").append(mark).append("/60<br>");
+                        try {
+                            total += Integer.parseInt(mark);
+                            count++;
+                        } catch (NumberFormatException ignored) {}
                     }
                 }
             }
-        }
-    };
-
-    // Populate marks when exam is changed
-    examBox.addActionListener(evt -> populateMarks.run());
-    
-    // Initial population for first exam
-    populateMarks.run();
-
-    // Scrollable dialog if needed
-    JScrollPane scroll = new JScrollPane(marksPanel);
-    scroll.setPreferredSize(new Dimension(400, 350));
-
-    int res = JOptionPane.showConfirmDialog(
-        null, scroll, "Enter/Update Marks",
-        JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE
-    );
-
-    if (res == JOptionPane.OK_OPTION) {
-        String examSel = (String) examBox.getSelectedItem();
-
-        try {
-            // Collect marks entered for each subject
-            StringBuilder marksSummary = new StringBuilder();
-            for (String subject : subjects) {
-                String mark = subjectFields.get(subject).getText().trim();
-                if (mark.isEmpty()) mark = "0";
-                marksSummary.append(subject).append(":").append(mark).append(", ");
+            
+            if (count > 0) {
+                double average = (double) total / count;
+                formattedMarks.append("<br><b style='color:#2c3e50;'>Total:</b> ").append(total).append("/").append(count * 60);
+                formattedMarks.append("<br><b style='color:#2c3e50;'>Average:</b> ").append(String.format("%.2f", average)).append("/60");
+                formattedMarks.append("<br><b style='color:#2c3e50;'>Percentage:</b> ").append(String.format("%.2f", (average / 60) * 100)).append("%");
             }
-
-            // Save marks summary to DB
-            // You can store this as a single string in one column per exam
-            if (examSel.equals("First Internal")) s.setFirstInternal(marksSummary.toString());
-            else if (examSel.equals("Second Internal")) s.setSecondInternal(marksSummary.toString());
-            else if (examSel.equals("Term Exam")) s.setTermExam(marksSummary.toString());
-
-            studentDAO.update(s);
-            refresh.run();
-
-        } catch (SQLException ex) {
-            showErr(ex);
+            
+            formattedMarks.append("</body></html>");
+            
+            JLabel marksLabel = new JLabel(formattedMarks.toString());
+            marksLabel.setFont(LABEL_FONT);
+            gbc.gridx = 0; gbc.gridwidth = 2;
+            panel.add(marksLabel, gbc);
+        } else {
+            JLabel noMarks = new JLabel("  No marks entered yet");
+            noMarks.setFont(LABEL_FONT);
+            noMarks.setForeground(TEXT_SECONDARY);
+            gbc.gridx = 0; gbc.gridwidth = 2;
+            panel.add(noMarks, gbc);
         }
+        gbc.gridwidth = 1;
     }
-});
-
-
-        return p;
-    }
-    // ----------------- Student Panel -----------------
-    private void showStudentPanel(User user){
-        JFrame f = new JFrame("Student Panel");
-        f.setSize(600,400);
-        f.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-
-        JPanel p = new JPanel(new BorderLayout());
-        p.setBackground(new Color(245, 245, 220)); // beige
-
-        JButton backBtn = new JButton("Logout");
-        JPanel topPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
-        topPanel.setBackground(new Color(245, 245, 220)); // beige
-        topPanel.add(backBtn);
-        p.add(topPanel, BorderLayout.NORTH);
-
-        try {
-            Student s = null;
-            for (Student st: studentDAO.getAll()) if (st.getId()==user.getRefId()) s=st;
-            if (s==null){ JOptionPane.showMessageDialog(null,"Student profile not found"); return; }
-            JTextArea ta = new JTextArea();
-            ta.setEditable(false);
-            ta.setText("Name: "+s.getName()+"\nAge: "+s.getAge()+"\nClass: "+s.getClassNo()+"\nAddress: "+s.getAddress()+"\nMarks: "+s.getMarks());
-            p.add(new JScrollPane(ta), BorderLayout.CENTER);
-        } catch(SQLException ex){ showErr(ex); }
-
-        backBtn.addActionListener(e -> {
-            f.setVisible(false);
-            showLogin();
-        });
-
-        f.add(p);
-        f.setLocationRelativeTo(null);
-        f.setVisible(true);
-    }
-
 
     // ----------------- Small helper forms -----------------
 // TeacherForm used in admin to add/edit teacher + create login credentials
@@ -492,30 +842,73 @@ class TeacherForm {
     private ButtonGroup genderGroup = new ButtonGroup();
 
     public TeacherForm(Teacher t){
-        panel = new JPanel(new GridLayout(11,2,5,5));
-        panel.add(new JLabel("Name:")); panel.add(nameField);
-        panel.add(new JLabel("Subject:")); panel.add(subjectField);
-        panel.add(new JLabel("Phone Number:")); panel.add(phoneField);
-        panel.add(new JLabel("Qualification:")); panel.add(qualField);
-        panel.add(new JLabel("Class Assigned (optional):"));
-        classBox.addItem(null); for(int i=1;i<=10;i++) classBox.addItem(i); panel.add(classBox);
-        panel.add(new JLabel("Gender:"));
-        JPanel genderPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
+        // Build a card-like form with header + content
+        panel = new JPanel(new BorderLayout(0,10));
+        panel.setBackground(CARD_BG);
+        JLabel hdr = new JLabel(t==null ? "Add Teacher" : "Update Teacher", JLabel.CENTER);
+        hdr.setFont(TITLE_FONT.deriveFont(16f));
+        hdr.setBorder(BorderFactory.createEmptyBorder(8,8,8,8));
+        panel.add(hdr, BorderLayout.NORTH);
+
+        JPanel content = new JPanel(new GridBagLayout());
+        content.setBackground(CARD_BG);
+        GridBagConstraints gbc = new GridBagConstraints();
+        gbc.insets = new Insets(6,8,6,8);
+        gbc.anchor = GridBagConstraints.WEST;
+        gbc.fill = GridBagConstraints.HORIZONTAL;
+        gbc.gridx = 0; gbc.gridy = 0;
+
+        // helper to style fields
+        java.util.function.Consumer<JTextField> styleField = f -> {
+            f.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createLineBorder(new Color(189,195,199),1),
+                BorderFactory.createEmptyBorder(6,8,6,8)
+            ));
+            f.setFont(LABEL_FONT);
+        };
+        styleField.accept(nameField); styleField.accept(subjectField); styleField.accept(phoneField);
+        styleField.accept(qualField); styleField.accept(usernameField); styleField.accept(passwordField);
+
+        content.add(new JLabel("Name:"), gbc);
+        gbc.gridx = 1; content.add(nameField, gbc);
+        gbc.gridx = 0; gbc.gridy++;
+        content.add(new JLabel("Subject:"), gbc);
+        gbc.gridx = 1; content.add(subjectField, gbc);
+        gbc.gridx = 0; gbc.gridy++;
+        content.add(new JLabel("Phone Number:"), gbc);
+        gbc.gridx = 1; content.add(phoneField, gbc);
+        gbc.gridx = 0; gbc.gridy++;
+        content.add(new JLabel("Qualification:"), gbc);
+        gbc.gridx = 1; content.add(qualField, gbc);
+        gbc.gridx = 0; gbc.gridy++;
+        content.add(new JLabel("Class Assigned (optional):"), gbc);
+        classBox.addItem(null); for(int i=1;i<=10;i++) classBox.addItem(i);
+        gbc.gridx = 1; content.add(classBox, gbc);
+        gbc.gridx = 0; gbc.gridy++;
+        content.add(new JLabel("Gender:"), gbc);
+        JPanel genderPanel = new JPanel(new FlowLayout(FlowLayout.LEFT,6,0));
+        genderPanel.setOpaque(false);
         genderGroup.add(maleBtn); genderGroup.add(femaleBtn);
         genderPanel.add(maleBtn); genderPanel.add(femaleBtn);
-        panel.add(genderPanel);
-        panel.add(new JLabel("Login username:")); panel.add(usernameField);
-        panel.add(new JLabel("Login password:")); panel.add(passwordField);
+        gbc.gridx = 1; content.add(genderPanel, gbc);
+        gbc.gridx = 0; gbc.gridy++;
+        content.add(new JLabel("Login username:"), gbc);
+        gbc.gridx = 1; content.add(usernameField, gbc);
+        gbc.gridx = 0; gbc.gridy++;
+        content.add(new JLabel("Login password:"), gbc);
+        gbc.gridx = 1; content.add(passwordField, gbc);
+
+        panel.add(content, BorderLayout.CENTER);
+
+        // prefill values if editing
         if (t!=null){
             nameField.setText(t.getName());
             subjectField.setText(t.getSubject());
             qualField.setText(t.getQualification());
-            // phoneField.setText(t.getPhone()); // Uncomment if Teacher model has phone
+            phoneField.setText(t.getPhone_number()!=null? t.getPhone_number() : "");
             if (t.getClassAssigned()!=null) classBox.setSelectedItem(t.getClassAssigned());
-            else classBox.setSelectedItem(null);
             if ("Male".equalsIgnoreCase(t.getGender())) maleBtn.setSelected(true);
             else if ("Female".equalsIgnoreCase(t.getGender())) femaleBtn.setSelected(true);
-            // Optionally set usernameField and passwordField if you store them in Teacher
         } else {
             maleBtn.setSelected(true);
         }
@@ -536,6 +929,12 @@ class TeacherForm {
     }
     public String getUsername() { return usernameField.getText().trim(); }
     public String getPassword() { return passwordField.getText().trim(); }
+    // Validate required fields. Returns null when OK, otherwise error message.
+    public String validateFields() {
+        String nm = nameField.getText() == null ? "" : nameField.getText().trim();
+        if (nm.isEmpty()) return "Name is required.";
+        return null;
+    }
 }
 
 
@@ -560,82 +959,79 @@ class StudentForm {
     private ButtonGroup genderGroup = new ButtonGroup();
 
     public StudentForm(Student s){
-        panel = new JPanel(new GridBagLayout());
+        panel = new JPanel(new BorderLayout(0,10));
+        panel.setBackground(CARD_BG);
+        JLabel hdr = new JLabel(s==null ? "Add Student" : "Update Student", JLabel.CENTER);
+        hdr.setFont(TITLE_FONT.deriveFont(16f));
+        hdr.setBorder(BorderFactory.createEmptyBorder(8,8,8,8));
+        panel.add(hdr, BorderLayout.NORTH);
+
+        JPanel content = new JPanel(new GridBagLayout());
+        content.setBackground(CARD_BG);
         GridBagConstraints gbc = new GridBagConstraints();
-        gbc.insets = new Insets(6, 8, 6, 8);
+        gbc.insets = new Insets(6,8,6,8);
+        gbc.anchor = GridBagConstraints.WEST;
         gbc.fill = GridBagConstraints.HORIZONTAL;
         gbc.gridx = 0; gbc.gridy = 0;
-        panel.add(new JLabel("Admission Number:"), gbc);
-        gbc.gridx = 1;
-        panel.add(admissionNumberField, gbc);
 
-        gbc.gridx = 0; gbc.gridy++;
-        panel.add(new JLabel("Name:"), gbc);
-        gbc.gridx = 1;
-        panel.add(nameField, gbc);
+        java.util.function.Consumer<JTextField> styleField = f -> {
+            f.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createLineBorder(new Color(189,195,199),1),
+                BorderFactory.createEmptyBorder(6,8,6,8)
+            ));
+            f.setFont(LABEL_FONT);
+        };
+        styleField.accept(admissionNumberField); styleField.accept(nameField); styleField.accept(ageField);
+        styleField.accept(addressField); styleField.accept(firstInternalField); styleField.accept(secondInternalField);
+        styleField.accept(termExamField); styleField.accept(fatherNameField); styleField.accept(fatherNumberField);
+        styleField.accept(dobField); styleField.accept(usernameField); styleField.accept(passwordField);
 
+        content.add(new JLabel("Admission Number:"), gbc);
+        gbc.gridx = 1; content.add(admissionNumberField, gbc);
         gbc.gridx = 0; gbc.gridy++;
-        panel.add(new JLabel("Age:"), gbc);
+        content.add(new JLabel("Name:"), gbc);
+        gbc.gridx = 1; content.add(nameField, gbc);
+        gbc.gridx = 0; gbc.gridy++;
+        content.add(new JLabel("Age:"), gbc);
+        gbc.gridx = 1; content.add(ageField, gbc);
+        gbc.gridx = 0; gbc.gridy++;
+        content.add(new JLabel("Class:"), gbc);
+        gbc.gridx = 1; content.add(classBox, gbc);
+        gbc.gridx = 0; gbc.gridy++;
+        content.add(new JLabel("Gender:"), gbc);
         gbc.gridx = 1;
-        panel.add(ageField, gbc);
+        JPanel genderPanel = new JPanel(new FlowLayout(FlowLayout.LEFT,6,0)); genderPanel.setOpaque(false);
+        genderGroup.add(maleBtn); genderGroup.add(femaleBtn); genderPanel.add(maleBtn); genderPanel.add(femaleBtn);
+        content.add(genderPanel, gbc);
+        gbc.gridx = 0; gbc.gridy++;
+        content.add(new JLabel("Address:"), gbc);
+        gbc.gridx = 1; content.add(addressField, gbc);
+        gbc.gridx = 0; gbc.gridy++;
+        content.add(new JLabel("First Internal:"), gbc);
+        gbc.gridx = 1; content.add(firstInternalField, gbc);
+        gbc.gridx = 0; gbc.gridy++;
+        content.add(new JLabel("Second Internal:"), gbc);
+        gbc.gridx = 1; content.add(secondInternalField, gbc);
+        gbc.gridx = 0; gbc.gridy++;
+        content.add(new JLabel("Term Exam:"), gbc);
+        gbc.gridx = 1; content.add(termExamField, gbc);
+        gbc.gridx = 0; gbc.gridy++;
+        content.add(new JLabel("Father's Name:"), gbc);
+        gbc.gridx = 1; content.add(fatherNameField, gbc);
+        gbc.gridx = 0; gbc.gridy++;
+        content.add(new JLabel("Father's Number:"), gbc);
+        gbc.gridx = 1; content.add(fatherNumberField, gbc);
+        gbc.gridx = 0; gbc.gridy++;
+        content.add(new JLabel("DOB:"), gbc);
+        gbc.gridx = 1; content.add(dobField, gbc);
+        gbc.gridx = 0; gbc.gridy++;
+        content.add(new JLabel("Login username:"), gbc);
+        gbc.gridx = 1; content.add(usernameField, gbc);
+        gbc.gridx = 0; gbc.gridy++;
+        content.add(new JLabel("Login password:"), gbc);
+        gbc.gridx = 1; content.add(passwordField, gbc);
 
-        gbc.gridx = 0; gbc.gridy++;
-        panel.add(new JLabel("Class:"), gbc);
-        gbc.gridx = 1;
-        panel.add(classBox, gbc);
-
-        gbc.gridx = 0; gbc.gridy++;
-        panel.add(new JLabel("Gender:"), gbc);
-        gbc.gridx = 1;
-        JPanel genderPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
-        genderGroup.add(maleBtn); genderGroup.add(femaleBtn);
-        genderPanel.add(maleBtn); genderPanel.add(femaleBtn);
-        panel.add(genderPanel, gbc);
-
-        gbc.gridx = 0; gbc.gridy++;
-        panel.add(new JLabel("Address:"), gbc);
-        gbc.gridx = 1;
-        panel.add(addressField, gbc);
-
-        gbc.gridx = 0; gbc.gridy++;
-        panel.add(new JLabel("First Internal:"), gbc);
-        gbc.gridx = 1;
-        panel.add(firstInternalField, gbc);
-
-        gbc.gridx = 0; gbc.gridy++;
-        panel.add(new JLabel("Second Internal:"), gbc);
-        gbc.gridx = 1;
-        panel.add(secondInternalField, gbc);
-
-        gbc.gridx = 0; gbc.gridy++;
-        panel.add(new JLabel("Term Exam:"), gbc);
-        gbc.gridx = 1;
-        panel.add(termExamField, gbc);
-
-        gbc.gridx = 0; gbc.gridy++;
-        panel.add(new JLabel("Father's Name:"), gbc);
-        gbc.gridx = 1;
-        panel.add(fatherNameField, gbc);
-
-        gbc.gridx = 0; gbc.gridy++;
-        panel.add(new JLabel("Father's Number:"), gbc);
-        gbc.gridx = 1;
-        panel.add(fatherNumberField, gbc);
-
-        gbc.gridx = 0; gbc.gridy++;
-        panel.add(new JLabel("DOB:"), gbc);
-        gbc.gridx = 1;
-        panel.add(dobField, gbc);
-
-        gbc.gridx = 0; gbc.gridy++;
-        panel.add(new JLabel("Login username:"), gbc);
-        gbc.gridx = 1;
-        panel.add(usernameField, gbc);
-
-        gbc.gridx = 0; gbc.gridy++;
-        panel.add(new JLabel("Login password:"), gbc);
-        gbc.gridx = 1;
-        panel.add(passwordField, gbc);
+        panel.add(content, BorderLayout.CENTER);
 
         if (s!=null){
             admissionNumberField.setText(s.getAdmissionNumber());
@@ -656,6 +1052,17 @@ class StudentForm {
         }
     }
     public JPanel getPanel(){ return panel; }
+    
+    // Validate required fields. Returns null when OK, otherwise error message.
+    public String validateFields() {
+        String adm = admissionNumberField.getText() == null ? "" : admissionNumberField.getText().trim();
+        String nm = nameField.getText() == null ? "" : nameField.getText().trim();
+        if (adm.isEmpty() && nm.isEmpty()) return "Admission Number and Name are required.";
+        if (adm.isEmpty()) return "Admission Number is required.";
+        if (nm.isEmpty()) return "Name is required.";
+        return null;
+    }
+    
     public Student toStudent(){
         int age=0; try{ age=Integer.parseInt(ageField.getText().trim()); } catch(Exception e){}
         String gender = maleBtn.isSelected() ? "Male" : "Female";
@@ -676,7 +1083,15 @@ class StudentForm {
     }
     public String getUsername() { return usernameField.getText().trim(); }
     public String getPassword() { return passwordField.getText().trim(); }
+    
+    // Add setters to pre-populate form when editing
+    public void setUsername(String username) { 
+        if (username != null) usernameField.setText(username); 
     }
+    public void setPassword(String password) { 
+        if (password != null) passwordField.setText(password); 
+    }
+}
 
     // - Utility
     private void showErr(Exception ex){ ex.printStackTrace(); JOptionPane.showMessageDialog(null, "Error: " + ex.getMessage()); }
